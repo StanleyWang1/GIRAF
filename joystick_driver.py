@@ -20,9 +20,13 @@ def joystick_read(js):
         "LY": apply_deadzone(js.get_axis(1)),
         "LT": apply_deadzone((js.get_axis(2) + 1) / 2),
         "RT": apply_deadzone((js.get_axis(5) + 1) / 2),
+        "XB": js.get_button(2),
         "LB": js.get_button(4),
         "RB": js.get_button(5),
     }
+
+def joystick_disconnect(js):
+    js.quit()
 
 def main():
     js = joystick_connect()
@@ -33,3 +37,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

@@ -2,31 +2,36 @@ import pyCandle
 import threading
 import time
 
-from joystick_driver import joystick_connect, joystick_read
-from motor_driver import motor_connect, motor_drive, motor_disconnect
+from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
+from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
 
 ## ----------------------------------------------------------------------------------------------------
 # Joystick Controller Teleoperation
 ## ----------------------------------------------------------------------------------------------------
 
 # Global Variables
-joystick_data = {"LX":0, "LY":0, "LT":0, "RT":0, "LB":0, "RB":0}
+joystick_data = {"LX":0, "LY":0, "LT":0, "RT":0, "XB":0, "LB":0, "RB":0}
 joystick_lock = threading.Lock()
+
 running = True
+running_lock = threading.Lock()
 
 ## ----------------------------------------------------------------------------------------------------
 # Joystick Monitoring Thread
 ## ----------------------------------------------------------------------------------------------------
 def joystick_monitor():
-    global joystick_data
+    global joystick_data, running
 
     js = joystick_connect()
-    print("Joystick connected!")
+    print("\033[93mTELEOP: Joystick Connected!\033[0m")
 
-    while True:
+    while running:
         with joystick_lock:
             joystick_data = joystick_read(js)
         time.sleep(0.005)
+
+    joystick_disconnect(js)
+    print("\033[93mTELEOP: Joystick Disconnected!\033[0m")
 
 ## ----------------------------------------------------------------------------------------------------
 # Motor Control Thread
@@ -39,7 +44,7 @@ def motor_control():
     boom_pos = 0
 
     candle, motors = motor_connect()
-    print("Motors connected!")
+    print("\033[93mTELEOP: Motors Connected!\033[0m")
 
     try:
         while running:
@@ -49,12 +54,20 @@ def motor_control():
                 LY = joystick_data["LY"]
                 LT = joystick_data["LT"]
                 RT = joystick_data["RT"]
+                XB = joystick_data["XB"]
                 LB = joystick_data["LB"]
                 RB = joystick_data["RB"]
+            
+            if XB: # stop button engaged - abort process!
+                with running_lock:
+                    running = False
+                break
+
             # dynamically adjust teleop drive ratio
             roll_drive_ratio = 0.0075/(-(boom_pos-4)/4)
             pitch_drive_ratio = 0.0075/(-(boom_pos-4)/4)
             boom_drive_ratio = 0.025
+
             # safety interlock
             if LB and RB:
                 roll_pos = roll_pos - roll_drive_ratio*LX
@@ -63,14 +76,17 @@ def motor_control():
                     boom_pos = boom_pos - boom_drive_ratio*RT
                 elif LT and not RT: # retract boom
                     boom_pos = boom_pos + boom_drive_ratio*LT
+
             # joint limits
-            boom_pos = max(min(boom_pos, 0), -37)
-            
+            boom_pos = max(min(boom_pos, 0), -38)
+
+            # check status then drive motors
+            motor_status(candle, motors)
             motor_drive(candle, motors, roll_pos, pitch_pos, boom_pos)
             time.sleep(0.005)
     finally:
-        motor_disconnect()
-        print("Motors disconnected!")
+        motor_disconnect(candle)
+        print("\033[93mTELEOP: Motors Disconnected!\033[0m")
         
 
 joystick_thread = threading.Thread(target=joystick_monitor, daemon=True)
@@ -79,9 +95,6 @@ joystick_thread.start()
 motor_thread.start()
 
 # Keep main thread alive
-try:
-    while True:
-        time.sleep(1)
-except KeyboardInterrupt:
-    print("\nExiting...")
-    
+while running:
+    time.sleep(1)
+
