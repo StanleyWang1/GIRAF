@@ -11,7 +11,7 @@ def joystick_connect():
     return js
 
 def joystick_read(js):
-    def apply_deadzone(value, deadzone=0.1):
+    def apply_deadzone(value, deadzone=0.25):
         return 0 if -deadzone < value < deadzone else value
 
     pygame.event.pump()

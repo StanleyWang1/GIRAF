@@ -57,7 +57,7 @@ def motor_control():
        
         # Use forward kinematics to get current position
         x_pos = np.array([[-L2*c2 + d3*s2*c1], [-L2*c2 + d3*s2*s1], [L1 - L2*s2 - d3*c2]])
-        print(x_pos)
+        # print(x_pos)
         
         # Calculate inverse Jacobian from symbolic expression
         Jv_inv = np.array([[s1 / (L2*c2 - d3*s2), c1 / (-L2*c2 + d3*s2), 0],
@@ -65,16 +65,38 @@ def motor_control():
                         [((-L2*c2 + d3*s2) * c1) / d3, ((-L2*c2 + d3*s2) * s1) / d3, -L2*s2/d3 - c2]])
         return Jv_inv
 
-    def get_d3(boom_pos):
-        # boom pos in [rad], d3 in [m]
-        return (-58 * boom_pos + 55 + 255)/1000 # [m]
-    def get_boom_pos(d3):
-        return (1000*d3 - 55 - 255) / (-58) # [rad]
+    def get_d3(boom_pos, d3_dot):
+        if d3_dot > 0: # extending
+            return (-56 * boom_pos + 55 + 255)/1000 # [m]
+        else: # retracting
+            return (-60.5 * boom_pos + 55 + 255)/1000 # [m]
+    def get_boom_pos(d3, d3_dot):
+        if d3_dot > 0: # extending
+            # cubic approximation
+            p1 = -0.5455
+            p2 = 2.9053
+            p3 = -21.8727
+            p4 = 6.5349
+            return p1 * d3**3 + p2 * d3**2 + p3 * d3 + p4 
+            # linear approximation
+            # return (1000*d3 - 55 - 255) / (-56) # [rad]
+        else: # retracting
+            # cubic approximation
+            p1 = -0.0508
+            p2 = -0.4122
+            p3 = -15.2992
+            p4 = 4.7840
+            return p1 * d3**3 + p2 * d3**2 + p3 * d3 + p4
+            # linear approximation
+            # return (1000*d3 - 55 - 255) / (-60.5) # [rad]
 
     # Joint Coords            
     roll_pos = 0
     pitch_pos = 0
+    d3_pos = (55+255)/1000
     boom_pos = 0
+    
+    joint_velocity = np.zeros((3,1)) # initialize as zero
 
     candle, motors = motor_connect()
     print("\033[93mTELEOP: Motors Connected!\033[0m")
@@ -99,8 +121,8 @@ def motor_control():
             # safety interlock
             if LB and RB:
                 with velocity_lock:
-                    velocity[0] = -0.1*LY # X velocity
-                    velocity[1] = 0.1*LX # Y velocity
+                    velocity[0] = -0.25*LY # X velocity
+                    velocity[1] = -0.25*LX # Y velocity
                 if RT and not LT: # Z up
                     with velocity_lock:
                         velocity[2] = 0.1*RT # Z velocity up
@@ -113,14 +135,20 @@ def motor_control():
             else:
                 with velocity_lock:
                     velocity = np.zeros((3, 1))
+            
+            # d3 = get_d3(boom_pos, joint_velocity[2,0]) # calculate d3 from previous step
 
-            Jv_inv = inverse_linear_jacobian([roll_pos, pitch_pos + np.pi/2, get_d3(boom_pos)])
+            Jv_inv = inverse_linear_jacobian([roll_pos, pitch_pos + np.pi/2, d3_pos])
             joint_velocity = Jv_inv @ velocity
 
             roll_pos = roll_pos + 0.005*joint_velocity[0, 0]
             pitch_pos = pitch_pos + 0.005*joint_velocity[1, 0]
-            boom_pos = get_boom_pos(get_d3(boom_pos) + 0.005*joint_velocity[2, 0])
+            d3_pos = d3_pos + 0.005*joint_velocity[2, 0]
+
+            boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0])
             
+            print(boom_pos)
+
             # joint limits
             roll_pos = max(min(roll_pos, np.pi/2), -np.pi/2)
             pitch_pos = max(min(pitch_pos, np.pi/2), 0)

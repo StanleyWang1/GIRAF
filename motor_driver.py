@@ -20,7 +20,7 @@ def motor_connect():
 
     for i in motors.values():
         candle.md80s[i].setImpedanceControllerParams(1000, 50)
-        candle.md80s[i].setMaxTorque(10.0)
+        candle.md80s[i].setMaxTorque(25.0)
     
     candle.begin()
     
