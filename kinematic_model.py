@@ -5,7 +5,9 @@ import sympy as sp
 # Link Lengths
 L1_CONST = 0.21  # m
 L2_CONST = 0.055  # m
-L3_CONST = 0.133 # m
+# L3_CONST = 0.133 # m
+L3_CONST = 0.21
+
 # Flexural rigidity of boom
 EI_CONST = 91.24628715 # Nm^2
 

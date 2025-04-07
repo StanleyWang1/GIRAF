@@ -52,7 +52,7 @@ def motor_control():
 
     def get_boom_pos(d3, d3_dot):
         d3 = d3 - 80/1000
-        if d3_dot > 0: # extending
+        if d3_dot > 0 and d3 > 1: # extending
             # cubic approximation
             p1 = -0.5455
             p2 = 2.9053
@@ -111,8 +111,8 @@ def motor_control():
                     velocity[0] = -0.25*LY # X velocity
                     velocity[1] = -0.25*LX # Y velocity
 
-                    velocity[4] = 0.1*RY # WY angular velocity
-                    velocity[5] = 0.1*RX # WZ angular velocity
+                    velocity[4] = 0.25*RY # WY angular velocity
+                    velocity[5] = -0.25*RX # WZ angular velocity
                 if RT and not LT: # Z up
                     with velocity_lock:
                         velocity[2] = 0.1*RT # Z velocity up
