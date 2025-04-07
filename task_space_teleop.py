@@ -16,7 +16,7 @@ from kinematic_model import num_jacobian
 joystick_data = {"LX":0, "LY":0, "LT":0, "RT":0, "XB":0, "LB":0, "RB":0}
 joystick_lock = threading.Lock()
 
-velocity = np.zeros((3, 1))
+velocity = np.zeros((6, 1))
 velocity_lock = threading.Lock()
 
 running = True
@@ -51,6 +51,7 @@ def motor_control():
         return J_inv
 
     def get_boom_pos(d3, d3_dot):
+        d3 = d3 - 80/1000
         if d3_dot > 0: # extending
             # cubic approximation
             p1 = -0.5455
@@ -118,7 +119,7 @@ def motor_control():
                         velocity[2] = 0 # no Z velocity
             else:
                 with velocity_lock:
-                    velocity = np.zeros((3, 1))
+                    velocity = np.zeros((6, 1))
 
             Jv_inv = inverse_jacobian([roll_pos, pitch_pos + np.pi/2, d3_pos, 
                                        theta4_pos + np.pi/2, theta5_pos + 5*np.pi/6, theta6_pos])
@@ -142,7 +143,7 @@ def motor_control():
             
             # check status then drive motors
             motor_status(candle, motors)
-            # motor_drive(candle, motors, roll_pos, pitch_pos, boom_pos)
+            motor_drive(candle, motors, roll_pos, pitch_pos, boom_pos)
             dynamixel_drive(dmx_controller, dmx_GSW, [radians_to_ticks(theta4_pos) + 50,
                                                       radians_to_ticks(theta5_pos) + 1750,
                                                       radians_to_ticks(theta6_pos) + 2050,
@@ -150,6 +151,7 @@ def motor_control():
             time.sleep(0.005)
     finally:
         motor_disconnect(candle)
+        dynamixel_disconnect(dmx_controller)
         print("\033[93mTELEOP: Motors Disconnected!\033[0m")
 
 

@@ -4,7 +4,7 @@ import warnings
 def motor_connect():
     kp = 1000
     kd = 50
-    max_torque = 25.0
+    max_torque = 10.0
 
     candle = pyCandle.Candle(pyCandle.CAN_BAUD_1M, True)
 
@@ -20,7 +20,7 @@ def motor_connect():
 
     for i in motors.values():
         candle.md80s[i].setImpedanceControllerParams(1000, 50)
-        candle.md80s[i].setMaxTorque(25.0)
+        candle.md80s[i].setMaxTorque(max_torque)
     
     candle.begin()
     

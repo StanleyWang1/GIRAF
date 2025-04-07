@@ -1,5 +1,6 @@
 from dynamixel_sdk import *
 import numpy as np
+import time
 
 from control_table import *
 from dynamixel_controller import DynamixelController
@@ -12,7 +13,7 @@ GRIPPER = 14
 
 def dynamixel_connect():
     # Initialize controller
-    controller = DynamixelController('COM14', 57600, 2.0)
+    controller = DynamixelController('/dev/ttyUSB0', 57600, 2.0)
     group_sync_write = GroupSyncWrite(controller.port_handler, controller.packet_handler, GOAL_POSITION[0], GOAL_POSITION[1])
 
     # Set Control Mode
@@ -62,6 +63,8 @@ def radians_to_ticks(rad):
 def main():
     controller, group_sync_write = dynamixel_connect()
     dynamixel_drive(controller, group_sync_write, [50, 1750, 2050, 1900])
+    time.sleep(1)
+    dynamixel_disconnect(controller)
 
 if __name__ == "__main__":
     main()
