@@ -147,7 +147,7 @@ def motor_control():
 
             boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0])
             
-            print(boom_pos)
+            # print(boom_pos)
 
             # joint limits
             roll_pos = max(min(roll_pos, np.pi/2), -np.pi/2)

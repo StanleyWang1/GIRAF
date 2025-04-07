@@ -4,7 +4,7 @@ import warnings
 def motor_connect():
     kp = 1000
     kd = 50
-    max_torque = 10.0
+    max_torque = 25.0
 
     candle = pyCandle.Candle(pyCandle.CAN_BAUD_1M, True)
 
@@ -56,6 +56,8 @@ def motor_drive(candle, motors, roll, pitch, boom):
     candle.md80s[motors["ROLL"]].setTargetPosition(roll)
     candle.md80s[motors["PITCH"]].setTargetPosition(pitch)
     candle.md80s[motors["BOOM"]].setTargetPosition(boom)
+    
+    # print("Boom Torque: " + str(round(candle.md80s[motors["BOOM"]].getTorque(), 3)))
 
 def motor_disconnect(candle):
     candle.end()
