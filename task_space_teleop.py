@@ -13,7 +13,7 @@ from kinematic_model import num_jacobian
 ## ----------------------------------------------------------------------------------------------------
 
 # Global Variables
-joystick_data = {"LX":0, "LY":0, "LT":0, "RT":0, "XB":0, "LB":0, "RB":0}
+joystick_data = {"LX":0, "LY":0, "RX":0, "RY":0, "LT":0, "RT":0, "XB":0, "LB":0, "RB":0}
 joystick_lock = threading.Lock()
 
 velocity = np.zeros((6, 1))
@@ -92,6 +92,8 @@ def motor_control():
             with joystick_lock:
                 LX = joystick_data["LX"]
                 LY = joystick_data["LY"]
+                RX = joystick_data["RX"]
+                RY = joystick_data["RY"]
                 LT = joystick_data["LT"]
                 RT = joystick_data["RT"]
                 XB = joystick_data["XB"]
@@ -108,6 +110,9 @@ def motor_control():
                 with velocity_lock:
                     velocity[0] = -0.25*LY # X velocity
                     velocity[1] = -0.25*LX # Y velocity
+
+                    velocity[4] = 0.1*RY # WY angular velocity
+                    velocity[5] = 0.1*RX # WZ angular velocity
                 if RT and not LT: # Z up
                     with velocity_lock:
                         velocity[2] = 0.1*RT # Z velocity up

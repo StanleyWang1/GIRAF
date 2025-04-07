@@ -18,6 +18,8 @@ def joystick_read(js):
     return {
         "LX": apply_deadzone(js.get_axis(0)),
         "LY": apply_deadzone(js.get_axis(1)),
+        "RX": apply_deadzone(js.get_axis(3)),
+        "RY": apply_deadzone(js.get_axis(4)),
         "LT": apply_deadzone((js.get_axis(2) + 1) / 2),
         "RT": apply_deadzone((js.get_axis(5) + 1) / 2),
         "XB": js.get_button(2),
