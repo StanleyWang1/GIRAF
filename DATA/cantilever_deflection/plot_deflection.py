@@ -49,5 +49,5 @@ for text in legend.get_texts():
     text.set_fontsize(14)
 plt.tight_layout()
 
-plt.savefig('./DATA/cantilever_deflection/flexural_rigidity_fit.png', format='png')
+# plt.savefig('./DATA/cantilever_deflection/flexural_rigidity_fit.png', format='png')
 plt.show()

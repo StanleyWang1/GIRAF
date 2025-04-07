@@ -3,10 +3,8 @@ import pyCandle
 import threading
 import time
 
-from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disconnect, radians_to_ticks
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
 from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
-from kinematic_model import num_jacobian
 
 ## ----------------------------------------------------------------------------------------------------
 # Joystick Controller Teleoperation
@@ -45,11 +43,33 @@ def joystick_monitor():
 def motor_control():
     global joystick_data, velocity, running
 
-    def inverse_jacobian(joint_coords):
-        J = num_jacobian(joint_coords)
-        J_inv = np.linalg.pinv(J)
-        return J_inv
+    def inverse_linear_jacobian(joint_coords):
+        L1 = 0.21
+        L2 = 0.055
+        th1 = joint_coords[0]
+        th2 = joint_coords[1]
+        d3 = joint_coords[2]
+        
+        s1 = np.sin(th1)
+        c1 = np.cos(th1)
+        s2 = np.sin(th2)
+        c2 = np.cos(th2)
+       
+        # Use forward kinematics to get current position
+        x_pos = np.array([[-L2*c2 + d3*s2*c1], [-L2*c2 + d3*s2*s1], [L1 - L2*s2 - d3*c2]])
+        # print(x_pos)
+        
+        # Calculate inverse Jacobian from symbolic expression
+        Jv_inv = np.array([[s1 / (L2*c2 - d3*s2), c1 / (-L2*c2 + d3*s2), 0],
+                        [c1*c2 / d3, s1*c2 / d3, s2 / d3],
+                        [((-L2*c2 + d3*s2) * c1) / d3, ((-L2*c2 + d3*s2) * s1) / d3, -L2*s2/d3 - c2]])
+        return Jv_inv
 
+    def get_d3(boom_pos, d3_dot):
+        if d3_dot > 0: # extending
+            return (-56 * boom_pos + 55 + 255)/1000 # [m]
+        else: # retracting
+            return (-60.5 * boom_pos + 55 + 255)/1000 # [m]
     def get_boom_pos(d3, d3_dot):
         if d3_dot > 0: # extending
             # cubic approximation
@@ -73,16 +93,12 @@ def motor_control():
     # Joint Coords            
     roll_pos = 0
     pitch_pos = 0
-    d3_pos = (55+255+80)/1000
+    d3_pos = (55+255)/1000
     boom_pos = 0
-    theta4_pos = 0
-    theta5_pos = 0
-    theta6_pos = 0
-
-    joint_velocity = np.zeros((6,1)) # initialize as zero
+    
+    joint_velocity = np.zeros((3,1)) # initialize as zero
 
     candle, motors = motor_connect()
-    dmx_controller, dmx_GSW = dynamixel_connect()
     print("\033[93mTELEOP: Motors Connected!\033[0m")
 
     try:
@@ -119,34 +135,32 @@ def motor_control():
             else:
                 with velocity_lock:
                     velocity = np.zeros((3, 1))
+            
+            # d3 = get_d3(boom_pos, joint_velocity[2,0]) # calculate d3 from previous step
 
-            Jv_inv = inverse_jacobian([roll_pos, pitch_pos + np.pi/2, d3_pos, 
-                                       theta4_pos + np.pi/2, theta5_pos + 5*np.pi/6, theta6_pos])
+            Jv_inv = inverse_linear_jacobian([roll_pos, pitch_pos + np.pi/2, d3_pos])
             joint_velocity = Jv_inv @ velocity
 
             roll_pos = roll_pos + 0.005*joint_velocity[0, 0]
             pitch_pos = pitch_pos + 0.005*joint_velocity[1, 0]
             d3_pos = d3_pos + 0.005*joint_velocity[2, 0]
 
-            boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
+            boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0])
+            
             print(boom_pos)
-
-            theta4_pos = theta4_pos + 0.005*joint_velocity[3, 0]
-            theta5_pos = theta5_pos + 0.005*joint_velocity[4, 0]
-            theta6_pos = theta6_pos + 0.005*joint_velocity[5, 0]
 
             # joint limits
             roll_pos = max(min(roll_pos, np.pi/2), -np.pi/2)
             pitch_pos = max(min(pitch_pos, np.pi/2), 0)
             boom_pos = max(min(boom_pos, 0), -36)
             
+            # print("Velocity:", velocity.flatten())
+            # print("Joint Velocities:", joint_velocity.flatten())
+            # print(np.round([roll_pos, pitch_pos, boom_pos], 2))
+            
             # check status then drive motors
             motor_status(candle, motors)
-            # motor_drive(candle, motors, roll_pos, pitch_pos, boom_pos)
-            dynamixel_drive(dmx_controller, dmx_GSW, [radians_to_ticks(theta4_pos) + 50,
-                                                      radians_to_ticks(theta5_pos) + 1750,
-                                                      radians_to_ticks(theta6_pos) + 2050,
-                                                      1900])
+            motor_drive(candle, motors, roll_pos, pitch_pos, boom_pos)
             time.sleep(0.005)
     finally:
         motor_disconnect(candle)
