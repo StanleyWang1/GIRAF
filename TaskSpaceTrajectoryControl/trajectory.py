@@ -139,9 +139,9 @@ def motor_control():
             boom_pos = max(min(boom_pos, 0), -36)
             
             if grasp:
-                grasp_pos = 2000
+                grasp_pos = 5000
             else:
-                grasp_pos = 3000
+                grasp_pos = 3500
 
             # check status then drive motors
             motor_status(candle, motors)

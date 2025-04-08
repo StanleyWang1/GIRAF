@@ -62,7 +62,7 @@ def radians_to_ticks(rad):
 
 def main():
     controller, group_sync_write = dynamixel_connect()
-    dynamixel_drive(controller, group_sync_write, [50, 1750, 2050, 1900])
+    dynamixel_drive(controller, group_sync_write, [50, 1750, 2050, 2000])
     time.sleep(1)
     dynamixel_disconnect(controller)
 

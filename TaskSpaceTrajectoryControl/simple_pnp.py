@@ -2,7 +2,7 @@ import numpy as np
 
 # Constants
 dt = 1 / 200  # 200 Hz
-pause_time = 1.0     # seconds at each endpoint
+pause_time = 2.0     # seconds at each endpoint
 traj_time = 2.0      # time to traverse the semicircle
 
 pause_steps = int(pause_time / dt)
@@ -13,9 +13,9 @@ theta_fwd = np.linspace(np.pi, 0, traj_steps)
 theta_bwd = np.linspace(0, np.pi, traj_steps)  # reverse
 
 def semicircle(theta):
-    x = np.full_like(theta, 0.5)
+    x = np.full_like(theta, 0.75)
     y = 0.25 * np.cos(theta)
-    z = 0.5 + 0.25 * np.sin(theta)
+    z = 0.05 + 0.25 * np.sin(theta)
     return np.stack((x, y, z), axis=-1)
 
 # Core paths
