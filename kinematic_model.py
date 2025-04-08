@@ -7,7 +7,8 @@ L1_CONST = 0.21  # m
 L2_CONST = 0.055  # m
 L3_CONST = 0.133 # m
 rho = 0.188 # [kg/m]
-m_e = 0.45 # [kg]
+# m_e = 0.45 # [kg]
+m_e = 5
 g = 9.81 # m/s^2
 
 # Flexural rigidity of boom
