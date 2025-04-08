@@ -64,7 +64,7 @@ def sym_forward_kinematics_corrected(MDH):
                      [0, 0,             0,              1]])
     
     T = T01 @ T12 @ T23 @ T3d @ T34 @ T45 @ T56
-    return sp.simplify(T)
+    return T
 
 ## SYMBOLIC Linear Velocity Jacobian
 def sym_jacobian_linear(T):
