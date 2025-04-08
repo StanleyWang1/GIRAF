@@ -3,7 +3,12 @@ import pyCandle
 import threading
 import time
 
-from generate_circle import circle_traj, circle_velocity
+# from generate_circle import circle_traj, circle_velocity
+from simple_pnp import semicirc_grasp, semicirc_traj, semicirc_velocity
+traj_grasp = semicirc_grasp
+traj_position = semicirc_traj
+traj_velocity = semicirc_velocity
+
 from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disconnect, radians_to_ticks
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
 from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
@@ -85,7 +90,7 @@ def motor_control():
             # return (1000*d3 - 55 - 255) / (-60.5) # [rad]
 
     # Joint Coords
-    joint_coords = np.array([0, 0, (55+255+80)/1000, 0, 0, 0]) # roll, pitch, d3, th4, th5, th6     
+    joint_coords = np.array([0, 0, (55+255+80)/1000, 0, -np.pi/2, 0]) # roll, pitch, d3, th4, th5, th6     
     boom_pos = 0 # revolute position of boom motor (w/ blossoming cal)        
     joint_velocity = np.zeros((6,1)) # initialize as zero
 
@@ -108,8 +113,9 @@ def motor_control():
         # Begin trajectory
         while running:
             x_curr = num_forward_kinematics(joint_coords + joint_offset).reshape((3,1))
-            x_ref = circle_traj[ix].reshape((3,1))
-            v_ref = circle_velocity[ix].reshape((3,1))
+            x_ref = traj_position[ix].reshape((3,1))
+            v_ref = traj_velocity[ix].reshape((3,1))
+            grasp = traj_grasp[ix]
 
             v_command = v_ref + K @ (x_ref - x_curr)
             v_command = np.vstack((v_command, np.zeros((3,1))))
@@ -132,15 +138,20 @@ def motor_control():
             joint_coords[1] = max(min(joint_coords[1], np.pi/2), 0)
             boom_pos = max(min(boom_pos, 0), -36)
             
+            if grasp:
+                grasp_pos = 2000
+            else:
+                grasp_pos = 3000
+
             # check status then drive motors
             motor_status(candle, motors)
             motor_drive(candle, motors, joint_coords[0], joint_coords[1], boom_pos)
             dynamixel_drive(dmx_controller, dmx_GSW, [radians_to_ticks(joint_coords[3]) + 50,
                                                       radians_to_ticks(joint_coords[4]) + 1750,
                                                       radians_to_ticks(joint_coords[5]) + 2050,
-                                                      1900])
+                                                      grasp_pos])
             
-            ix = (ix + 1) % len(circle_traj)
+            ix = (ix + 1) % len(traj_grasp)
             time.sleep(0.005)
     finally:
         motor_disconnect(candle)
