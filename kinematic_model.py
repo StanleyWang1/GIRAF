@@ -74,8 +74,7 @@ def sym_jacobian_linear(T):
     Jv = sp.Matrix([[x.diff(th1), x.diff(th2), x.diff(d3), x.diff(th4), x.diff(th5), x.diff(th6)],
                     [y.diff(th1), y.diff(th2), y.diff(d3), y.diff(th4), y.diff(th5), y.diff(th6)],
                     [z.diff(th1), z.diff(th2), z.diff(d3), z.diff(th4), z.diff(th5), z.diff(th6)]])
-    return Jv
-    # return sp.simplify(Jv) # linear velocity Jacobian
+    return sp.simplify(Jv) # linear velocity Jacobian
 
 ## SYMBOLIC Angular Velocity Jacobian
 def sym_jacobian_angular(MDH): # NOT OPTIMIZED FOR GENERAL MANIPULATOR STRUCTURES!
@@ -123,8 +122,9 @@ def num_forward_kinematics(joint_coords):
 def num_jacobian(joint_coords):
     return np.array(J_num(*joint_coords))
 
-T = sym_forward_kinematics_corrected(MDH_sym)
-FK_num = sp.lambdify((th1, th2, d3, th4, th5, th6), T[:3,3], modules='numpy')
+T = sym_forward_kinematics(MDH_sym)
+T_corr = sym_forward_kinematics_corrected(MDH_sym)
+FK_num = sp.lambdify((th1, th2, d3, th4, th5, th6), T_corr[:3,3], modules='numpy')
 
 Jv = sym_jacobian_linear(T)
 Jw = sym_jacobian_angular(MDH_sym)
