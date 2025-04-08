@@ -65,7 +65,7 @@ def motor_control():
 
     def get_boom_pos(d3, d3_dot):
         d3 = d3 - 80/1000
-        if d3_dot > 0 and d3 > 1: # extending
+        if d3_dot > 0: # extending
             # cubic approximation
             p1 = -0.5455
             p2 = 2.9053
@@ -134,7 +134,7 @@ def motor_control():
             
             # check status then drive motors
             motor_status(candle, motors)
-            # motor_drive(candle, motors, joint_coords[0], joint_coords[1], boom_pos)
+            motor_drive(candle, motors, joint_coords[0], joint_coords[1], boom_pos)
             dynamixel_drive(dmx_controller, dmx_GSW, [radians_to_ticks(joint_coords[3]) + 50,
                                                       radians_to_ticks(joint_coords[4]) + 1750,
                                                       radians_to_ticks(joint_coords[5]) + 2050,
