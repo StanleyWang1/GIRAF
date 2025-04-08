@@ -4,7 +4,7 @@ import threading
 import time
 
 # from generate_circle import circle_traj, circle_velocity
-from simple_pnp import pnp_grasp, pnp_traj, pnp_velocity
+from cyclic_pnp import pnp_grasp, pnp_traj, pnp_velocity
 traj_grasp = pnp_grasp
 traj_position = pnp_traj
 traj_velocity = pnp_velocity
@@ -90,7 +90,7 @@ def motor_control():
             # return (1000*d3 - 55 - 255) / (-60.5) # [rad]
 
     # Joint Coords
-    joint_coords = np.array([0, 0, (55+255+80)/1000, 0.2, -np.pi/2, 0]) # roll, pitch, d3, th4, th5, th6     
+    joint_coords = np.array([0, 0, (55+255+80)/1000, 0.3, -np.pi/2, 0]) # roll, pitch, d3, th4, th5, th6     
     boom_pos = 0 # revolute position of boom motor (w/ blossoming cal)        
     joint_velocity = np.zeros((6,1)) # initialize as zero
 

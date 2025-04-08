@@ -6,16 +6,16 @@ def steps(seconds): return int(seconds / dt)
 
 # Timing
 t_above = 2.0
-t_down  = 1.0
-t_grasp = 1.0
-t_up    = 1.0
+t_down  = 1.5
+t_grasp = 2.0
+t_up    = 1.5
 t_move  = 2.0
 
 # Positions (customize these!)
-A = np.array([1.5, -0.5, 0.25])
-B = np.array([1.5,  0.5, 0.25])
-C = np.array([2,  0, 0.3])
-above_offset = np.array([0, 0, 0.15])
+A = np.array([1.5, -0.5, 0.28])
+B = np.array([1.5,  0.5, 0.28])
+C = np.array([2,  0, 0.37])
+above_offset = np.array([0, 0, 0.25])
 above = lambda pt: pt + above_offset
 
 # Segment generator
