@@ -70,7 +70,7 @@ def motor_control():
 
     def get_boom_pos(d3, d3_dot):
         d3 = d3 - 80/1000
-        if d3_dot > 0: # extending
+        if d3_dot > 0 and False: # extending
             # cubic approximation
             p1 = -0.5455
             p2 = 2.9053
@@ -90,7 +90,7 @@ def motor_control():
             # return (1000*d3 - 55 - 255) / (-60.5) # [rad]
 
     # Joint Coords
-    joint_coords = np.array([0, 0, (55+255+80)/1000, 0, -np.pi/2, 0]) # roll, pitch, d3, th4, th5, th6     
+    joint_coords = np.array([0, 0, (55+255+80)/1000, 0.2, -np.pi/2, 0]) # roll, pitch, d3, th4, th5, th6     
     boom_pos = 0 # revolute position of boom motor (w/ blossoming cal)        
     joint_velocity = np.zeros((6,1)) # initialize as zero
 
@@ -139,7 +139,7 @@ def motor_control():
             boom_pos = max(min(boom_pos, 0), -36)
             
             if grasp:
-                grasp_pos = 5000
+                grasp_pos = 5100
             else:
                 grasp_pos = 3000
 
@@ -154,6 +154,7 @@ def motor_control():
             ix = (ix + 1) % len(traj_grasp)
             time.sleep(0.005)
     finally:
+        print(boom_pos)
         motor_disconnect(candle)
         dynamixel_disconnect(dmx_controller)
         print("\033[93mTELEOP: Motors Disconnected!\033[0m")

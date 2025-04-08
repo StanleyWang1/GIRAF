@@ -6,8 +6,8 @@ def steps(seconds):
     return int(seconds / dt)
 
 # Positions (customize these)
-pick = np.array([0.5, -0.25, 0.05])     # example pick location
-place = np.array([0.5,  0.25, 0.05])    # example place location
+pick = np.array([1.5, -0.5, 0.25])     # example pick location
+place = np.array([1.5,  0.5, 0.25])    # example place location
 above_offset = np.array([0, 0, 0.1])  # 10 cm above
 
 above_pick = pick + above_offset
