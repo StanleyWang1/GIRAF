@@ -139,7 +139,7 @@ def motor_control():
             boom_pos = max(min(boom_pos, 0), -36)
             
             if grasp:
-                grasp_pos = 5100
+                grasp_pos = 5200
             else:
                 grasp_pos = 3000
 
