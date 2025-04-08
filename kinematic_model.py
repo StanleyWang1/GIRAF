@@ -55,8 +55,9 @@ def sym_forward_kinematics_corrected(MDH):
     T56 = sym_MDH_forward(MDH[6])
 
     # deflection compensation
-    delta = sp.cos(th2) / EI_CONST * (rho * g * d3**4 / 8 + m_e * g * d3**3 / 3)
-    phi = sp.cos(th2) / EI_CONST * (rho * g * d3**3 / 6 + m_e * g * d3**2 / 2)
+    L = d3 - 255/1000
+    delta = sp.cos(th2 - sp.pi/2) / EI_CONST * (rho * g * L**4 / 8 + m_e * g * L**3 / 3)
+    phi = sp.cos(th2 - sp.pi/2) / EI_CONST * (rho * g * L**3 / 6 + m_e * g * L**2 / 2)
     T3d = sp.Matrix([[1, 0,             0,              0],
                      [0, sp.cos(-phi),  -sp.sin(-phi),  delta],
                      [0, sp.sin(-phi),  sp.cos(-phi),   0],
@@ -86,8 +87,9 @@ def sym_jacobian_angular(MDH): # NOT OPTIMIZED FOR GENERAL MANIPULATOR STRUCTURE
     T56 = sym_MDH_forward(MDH[6])
 
     # deflection compensation
-    delta = sp.cos(th2) / EI_CONST * (rho * g * d3**4 / 8 + m_e * g * d3**3 / 3)
-    phi = sp.cos(th2) / EI_CONST * (rho * g * d3**3 / 6 + m_e * g * d3**2 / 2)
+    L = d3 - 255/1000
+    delta = sp.cos(th2 - sp.pi/2) / EI_CONST * (rho * g * L**4 / 8 + m_e * g * L**3 / 3)
+    phi = sp.cos(th2 - sp.pi/2) / EI_CONST * (rho * g * L**3 / 6 + m_e * g * L**2 / 2)
     T3d = sp.Matrix([[1, 0,             0,              0],
                      [0, sp.cos(-phi),  -sp.sin(-phi),  delta],
                      [0, sp.sin(-phi),  sp.cos(-phi),   0],
