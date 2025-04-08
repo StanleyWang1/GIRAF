@@ -122,11 +122,16 @@ def num_forward_kinematics(joint_coords):
 def num_jacobian(joint_coords):
     return np.array(J_num(*joint_coords))
 
+print("Starting symbolic kinematic derivations")
 T = sym_forward_kinematics(MDH_sym)
+print("Computed FK")
 T_corr = sym_forward_kinematics_corrected(MDH_sym)
+print("Computed FK w/ deflection correction")
 FK_num = sp.lambdify((th1, th2, d3, th4, th5, th6), T_corr[:3,3], modules='numpy')
 
 Jv = sym_jacobian_linear(T)
+print("Computed linear velocity jacobian")
 Jw = sym_jacobian_angular(MDH_sym)
+print("Computed angular velocity jacobian")
 J = sp.Matrix.vstack(Jv, Jw)
 J_num = sp.lambdify((th1, th2, d3, th4, th5, th6), J, modules='numpy')
