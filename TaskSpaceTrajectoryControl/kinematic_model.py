@@ -6,7 +6,9 @@ import sympy as sp
 L1_CONST = 0.21  # m
 L2_CONST = 0.055  # m
 L3_CONST = 0.133 # m
-# L3_CONST = 0.21
+rho = 0.188 # [kg/m]
+m_e = 0.45 # [kg]
+g = 9.81 # m/s^2
 
 # Flexural rigidity of boom
 EI_CONST = 91.24628715 # Nm^2
@@ -43,6 +45,26 @@ def sym_forward_kinematics(MDH):
         T = T @ Ti
     return T
 
+def sym_forward_kinematics_corrected(MDH):
+    # Rigid link transforms
+    T01 = sym_MDH_forward(MDH['1'])
+    T12 = sym_MDH_forward(MDH['2'])
+    T23 = sym_MDH_forward(MDH['3'])
+    T34 = sym_MDH_forward(MDH['4'])
+    T45 = sym_MDH_forward(MDH['5'])
+    T56 = sym_MDH_forward(MDH['6'])
+
+    # deflection compensation
+    delta = sp.cos(th2) / EI_CONST * (rho * g * d3**4 / 8 + m_e * g * d3**3 / 3)
+    phi = sp.cos(th2) / EI_CONST * (rho * g * d3**3 / 6 + m_e * g * d3**2 / 2)
+    T3d = sp.Matrix([[1, 0,             0,              0],
+                     [0, sp.cos(-phi),  -sp.sin(-phi),  delta],
+                     [0, sp.sin(-phi),  sp.cos(-phi),   0]
+                     [0, 0,             0,              1]])
+    
+    T = T01 @ T12 @ T23 @ T3d @ T34 @ T45 @ T56
+    return T
+
 ## SYMBOLIC Linear Velocity Jacobian
 def sym_jacobian_linear(T):
     x = T[0,3]
@@ -63,13 +85,21 @@ def sym_jacobian_angular(MDH): # NOT OPTIMIZED FOR GENERAL MANIPULATOR STRUCTURE
     T45 = sym_MDH_forward(MDH[5])
     T56 = sym_MDH_forward(MDH[6])
 
-    # Compute cumulative transforms
+    # deflection compensation
+    delta = sp.cos(th2) / EI_CONST * (rho * g * d3**4 / 8 + m_e * g * d3**3 / 3)
+    phi = sp.cos(th2) / EI_CONST * (rho * g * d3**3 / 6 + m_e * g * d3**2 / 2)
+    T3d = sp.Matrix([[1, 0,             0,              0],
+                     [0, sp.cos(-phi),  -sp.sin(-phi),  delta],
+                     [0, sp.sin(-phi),  sp.cos(-phi),   0]
+                     [0, 0,             0,              1]])
+    
+    # Compute cumulative transforms (w/ deflection correction)
     T01_cum = T01
     T02_cum = T01 @ T12
     T03_cum = T01 @ T12 @ T23
-    T04_cum = T01 @ T12 @ T23 @ T34
-    T05_cum = T01 @ T12 @ T23 @ T34 @ T45
-    T06_cum = T01 @ T12 @ T23 @ T34 @ T45 @ T56
+    T04_cum = T01 @ T12 @ T23 @ T3d @ T34
+    T05_cum = T01 @ T12 @ T23 @ T3d @ T34 @ T45
+    T06_cum = T01 @ T12 @ T23 @ T3d @ T34 @ T45 @ T56
 
     # Extract z axes of joint 1, 2, 3 (in base frame)
     z1 = T01_cum[:3, 2]
@@ -90,7 +120,7 @@ def num_forward_kinematics(joint_coords):
 def num_jacobian(joint_coords):
     return np.array(J_num(*joint_coords))
 
-T = sym_forward_kinematics(MDH_sym)
+T = sym_forward_kinematics_corrected(MDH_sym)
 FK_num = sp.lambdify((th1, th2, d3, th4, th5, th6), T[:3,3], modules='numpy')
 
 Jv = sym_jacobian_linear(T)

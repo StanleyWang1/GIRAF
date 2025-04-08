@@ -113,13 +113,17 @@ def sym_jacobian_angular(MDH): # NOT OPTIMIZED FOR GENERAL MANIPULATOR STRUCTURE
     Jw = sp.Matrix.hstack(z1, z2, z3, z4, z5, z6)
     return sp.simplify(Jw)
 
+## NUMERICAL XYZ forward kinematics
+def num_forward_kinematics(joint_coords):
+    return np.array(FK_num(*joint_coords))
 ## NUMERICAL Basic Jacobian (6x6)
 def num_jacobian(joint_coords):
     return np.array(J_num(*joint_coords))
 
 T = sym_forward_kinematics_corrected(MDH_sym)
+FK_num = sp.lambdify((th1, th2, d3, th4, th5, th6), T[:3,3], modules='numpy')
+
 Jv = sym_jacobian_linear(T)
 Jw = sym_jacobian_angular(MDH_sym)
-
 J = sp.Matrix.vstack(Jv, Jw)
 J_num = sp.lambdify((th1, th2, d3, th4, th5, th6), J, modules='numpy')
