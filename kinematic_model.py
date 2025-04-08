@@ -47,19 +47,19 @@ def sym_forward_kinematics(MDH):
 
 def sym_forward_kinematics_corrected(MDH):
     # Rigid link transforms
-    T01 = sym_MDH_forward(MDH['1'])
-    T12 = sym_MDH_forward(MDH['2'])
-    T23 = sym_MDH_forward(MDH['3'])
-    T34 = sym_MDH_forward(MDH['4'])
-    T45 = sym_MDH_forward(MDH['5'])
-    T56 = sym_MDH_forward(MDH['6'])
+    T01 = sym_MDH_forward(MDH[1])
+    T12 = sym_MDH_forward(MDH[2])
+    T23 = sym_MDH_forward(MDH[3])
+    T34 = sym_MDH_forward(MDH[4])
+    T45 = sym_MDH_forward(MDH[5])
+    T56 = sym_MDH_forward(MDH[6])
 
     # deflection compensation
     delta = sp.cos(th2) / EI_CONST * (rho * g * d3**4 / 8 + m_e * g * d3**3 / 3)
     phi = sp.cos(th2) / EI_CONST * (rho * g * d3**3 / 6 + m_e * g * d3**2 / 2)
     T3d = sp.Matrix([[1, 0,             0,              0],
                      [0, sp.cos(-phi),  -sp.sin(-phi),  delta],
-                     [0, sp.sin(-phi),  sp.cos(-phi),   0]
+                     [0, sp.sin(-phi),  sp.cos(-phi),   0],
                      [0, 0,             0,              1]])
     
     T = T01 @ T12 @ T23 @ T3d @ T34 @ T45 @ T56
@@ -90,7 +90,7 @@ def sym_jacobian_angular(MDH): # NOT OPTIMIZED FOR GENERAL MANIPULATOR STRUCTURE
     phi = sp.cos(th2) / EI_CONST * (rho * g * d3**3 / 6 + m_e * g * d3**2 / 2)
     T3d = sp.Matrix([[1, 0,             0,              0],
                      [0, sp.cos(-phi),  -sp.sin(-phi),  delta],
-                     [0, sp.sin(-phi),  sp.cos(-phi),   0]
+                     [0, sp.sin(-phi),  sp.cos(-phi),   0],
                      [0, 0,             0,              1]])
     
     # Compute cumulative transforms (w/ deflection correction)
