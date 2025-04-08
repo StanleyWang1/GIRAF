@@ -4,10 +4,10 @@ import threading
 import time
 
 # from generate_circle import circle_traj, circle_velocity
-from simple_pnp import semicirc_grasp, semicirc_traj, semicirc_velocity
-traj_grasp = semicirc_grasp
-traj_position = semicirc_traj
-traj_velocity = semicirc_velocity
+from simple_pnp import pnp_grasp, pnp_traj, pnp_velocity
+traj_grasp = pnp_grasp
+traj_position = pnp_traj
+traj_velocity = pnp_velocity
 
 from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disconnect, radians_to_ticks
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
@@ -141,7 +141,7 @@ def motor_control():
             if grasp:
                 grasp_pos = 5000
             else:
-                grasp_pos = 3500
+                grasp_pos = 3000
 
             # check status then drive motors
             motor_status(candle, motors)
