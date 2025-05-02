@@ -152,7 +152,7 @@ def motor_control():
             # joint limits
             roll_pos = max(min(roll_pos, np.pi/2), -np.pi/2)
             pitch_pos = max(min(pitch_pos, np.pi/2), 0)
-            boom_pos = max(min(boom_pos, 0), -36)
+            boom_pos = max(min(boom_pos, 0), -30)
             
             # print("Velocity:", velocity.flatten())
             # print("Joint Velocities:", joint_velocity.flatten())

@@ -78,7 +78,7 @@ def motor_control():
                     boom_pos = boom_pos + boom_drive_ratio*LT
 
             # joint limits
-            boom_pos = max(min(boom_pos, 0), -40)
+            boom_pos = max(min(boom_pos, 0), -30)
             print(round(boom_pos, 3))
             
             # check status then drive motors
