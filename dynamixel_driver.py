@@ -62,9 +62,11 @@ def radians_to_ticks(rad):
 
 def main():
     controller, group_sync_write = dynamixel_connect()
-    dynamixel_drive(controller, group_sync_write, [50, 1750, 2050, 1900])
-    time.sleep(1)
+    print("\033[93mDYNAMIXEL: Motors Connected, Driving to Home (5 sec)\033[0m")
+    dynamixel_drive(controller, group_sync_write, [MOTOR11_HOME, MOTOR12_HOME, MOTOR13_HOME, MOTOR14_HOME])
+    time.sleep(5)
     dynamixel_disconnect(controller)
+    print("\033[93mDYNAMIXEL: Motors Disconnected, Torque Off\033[0m")
 
 if __name__ == "__main__":
     main()

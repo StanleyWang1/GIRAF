@@ -1,3 +1,9 @@
+# HOME POSITIONS (in reference kinematic configuration)
+MOTOR11_HOME = 2000
+MOTOR12_HOME = 1900
+MOTOR13_HOME = 30
+MOTOR14_HOME = 1000
+
 # XH-430-W250-T Serial Addresses
 OPERATING_MODE = (11, 1)
 HOMING_OFFSET = (20, 4)

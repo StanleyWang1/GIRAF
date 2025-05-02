@@ -3,6 +3,7 @@ import pyCandle
 import threading
 import time
 
+from control_table import MOTOR11_HOME, MOTOR12_HOME, MOTOR13_HOME, MOTOR14_HOME
 from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disconnect, radians_to_ticks
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
 from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
@@ -149,10 +150,10 @@ def motor_control():
             # check status then drive motors
             motor_status(candle, motors)
             motor_drive(candle, motors, roll_pos, pitch_pos, boom_pos)
-            dynamixel_drive(dmx_controller, dmx_GSW, [radians_to_ticks(theta4_pos) + 50,
-                                                      radians_to_ticks(theta5_pos) + 1750,
-                                                      radians_to_ticks(theta6_pos) + 2050,
-                                                      1900])
+            dynamixel_drive(dmx_controller, dmx_GSW, [radians_to_ticks(theta4_pos) + MOTOR11_HOME,
+                                                      radians_to_ticks(theta5_pos) + MOTOR12_HOME,
+                                                      radians_to_ticks(theta6_pos) + MOTOR13_HOME,
+                                                      MOTOR14_HOME])
             time.sleep(0.005)
     finally:
         motor_disconnect(candle)
