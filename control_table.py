@@ -1,8 +1,9 @@
 # HOME POSITIONS (in reference kinematic configuration)
 MOTOR11_HOME = 2000
-MOTOR12_HOME = 1900
-MOTOR13_HOME = 30
-MOTOR14_HOME = 1000
+MOTOR12_HOME = 1950
+MOTOR13_HOME = 0
+MOTOR14_OPEN = 1000 # fully open
+MOTOR14_CLOSED = 3800 # fully closed
 
 # XH-430-W250-T Serial Addresses
 OPERATING_MODE = (11, 1)
