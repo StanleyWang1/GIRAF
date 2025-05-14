@@ -151,12 +151,14 @@ def motor_control():
             d3_pos = d3_pos + 0.005*joint_velocity[2, 0]
 
             boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
-            print(boom_pos)
+            # print(boom_pos)
 
             theta4_pos = theta4_pos + 0.005*joint_velocity[3, 0]
             theta5_pos = theta5_pos + 0.005*joint_velocity[4, 0]
             theta6_pos = theta6_pos + 0.005*joint_velocity[5, 0]
             
+            theta5_pos = max(theta5_pos, -1.7)
+
             gripper_pos = gripper_pos + gripper_velocity
 
             # joint limits
