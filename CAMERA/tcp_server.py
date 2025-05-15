@@ -1,11 +1,12 @@
-# jetson_camera_server.py
+# jetson_camera_server_depthai.py
 import socket
 import cv2
 import struct
+import depthai as dai
 
 def main():
-    HOST = '0.0.0.0'  # Listen on all network interfaces
-    PORT = 8485       # Choose any free port
+    HOST = '0.0.0.0'
+    PORT = 8485
 
     # Setup socket
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -16,33 +17,40 @@ def main():
     conn, addr = server_socket.accept()
     print(f"Client connected from {addr}")
 
-    # Setup camera (DepthAI, webcam, etc.)
-    cap = cv2.VideoCapture(0)  # Change this if you use DepthAI pipeline instead
+    # Setup DepthAI pipeline
+    pipeline = dai.Pipeline()
 
-    if not cap.isOpened():
-        print("Camera could not be opened")
-        return
+    cam_rgb = pipeline.create(dai.node.ColorCamera)
+    cam_rgb.setPreviewSize(640, 480)
+    cam_rgb.setInterleaved(False)
+    cam_rgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.RGB)
+    cam_rgb.setFps(30)
 
-    try:
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                continue
+    xout_rgb = pipeline.create(dai.node.XLinkOut)
+    xout_rgb.setStreamName("rgb")
+    cam_rgb.preview.link(xout_rgb.input)
 
-            # Compress frame as JPEG
-            _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+    with dai.Device(pipeline) as device:
+        rgb_queue = device.getOutputQueue(name="rgb", maxSize=1, blocking=True)
 
-            # Send the length of the jpeg first
-            data = jpeg.tobytes()
-            size = len(data)
-            conn.sendall(struct.pack(">L", size) + data)
+        try:
+            while True:
+                in_rgb = rgb_queue.get()
+                frame = in_rgb.getCvFrame()
 
-    except Exception as e:
-        print(f"Error: {e}")
-    finally:
-        conn.close()
-        server_socket.close()
-        cap.release()
+                # Compress frame as JPEG
+                _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+
+                # Send the length of the jpeg first
+                data = jpeg.tobytes()
+                size = len(data)
+                conn.sendall(struct.pack(">L", size) + data)
+
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            conn.close()
+            server_socket.close()
 
 if __name__ == "__main__":
     main()
