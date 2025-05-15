@@ -42,6 +42,9 @@ def main():
             # Decode and show frame
             frame = cv2.imdecode(np.frombuffer(frame_data, dtype=np.uint8), cv2.IMREAD_COLOR)
             if frame is not None:
+                # cv2.imshow('Live Feed', frame)
+                cv2.namedWindow('Live Feed', cv2.WINDOW_NORMAL)
+                cv2.resizeWindow('Live Feed', 1920, 1080)  # or whatever your screen size is
                 cv2.imshow('Live Feed', frame)
 
             if cv2.waitKey(1) == ord('q'):

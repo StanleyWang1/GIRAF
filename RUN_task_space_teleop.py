@@ -151,20 +151,20 @@ def motor_control():
             d3_pos = d3_pos + 0.005*joint_velocity[2, 0]
 
             boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
-            # print(boom_pos)
+            print(boom_pos)
 
             theta4_pos = theta4_pos + 0.005*joint_velocity[3, 0]
             theta5_pos = theta5_pos + 0.005*joint_velocity[4, 0]
             theta6_pos = theta6_pos + 0.005*joint_velocity[5, 0]
             
-            theta5_pos = max(theta5_pos, -1.7)
+            theta5_pos = max(theta5_pos, -1.7) # wrist pitch limit
 
             gripper_pos = gripper_pos + gripper_velocity
 
             # joint limits
             roll_pos = max(min(roll_pos, np.pi/2), -np.pi/2)
             pitch_pos = max(min(pitch_pos, np.pi/2), 0)
-            boom_pos = max(min(boom_pos, 0), -36)
+            boom_pos = max(min(boom_pos, 0), -25)
             gripper_pos = int(max(min(gripper_pos, MOTOR14_CLOSED), MOTOR14_OPEN))
             
             # check status then drive motors
