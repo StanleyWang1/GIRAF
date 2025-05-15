@@ -146,16 +146,16 @@ def motor_control():
                                        theta4_pos + np.pi/2, theta5_pos + 5*np.pi/6, theta6_pos])
             joint_velocity = Jv_inv @ velocity
 
-            roll_pos = roll_pos + 0.005*joint_velocity[0, 0]
-            pitch_pos = pitch_pos + 0.005*joint_velocity[1, 0]
-            d3_pos = d3_pos + 0.005*joint_velocity[2, 0]
+            roll_pos = roll_pos + 0.0075*joint_velocity[0, 0]
+            pitch_pos = pitch_pos + 0.0075*joint_velocity[1, 0]
+            d3_pos = d3_pos + 0.0075*joint_velocity[2, 0]
 
             boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
             print(boom_pos)
 
-            theta4_pos = theta4_pos + 0.005*joint_velocity[3, 0]
-            theta5_pos = theta5_pos + 0.005*joint_velocity[4, 0]
-            theta6_pos = theta6_pos + 0.005*joint_velocity[5, 0]
+            theta4_pos = theta4_pos + 0.0075*joint_velocity[3, 0]
+            theta5_pos = theta5_pos + 0.0075*joint_velocity[4, 0]
+            theta6_pos = theta6_pos + 0.0075*joint_velocity[5, 0]
             
             theta5_pos = max(theta5_pos, -1.7) # wrist pitch limit
 
