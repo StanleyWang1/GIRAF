@@ -16,7 +16,7 @@ from kinematic_model import num_jacobian, num_forward_kinematics
 ## ----------------------------------------------------------------------------------------------------
 
 # Global Variables
-joystick_data = {"LX":0, "LY":0, "RX":0, "RY":0, "LT":0, "RT":0, "AB":0, "BB":0, "XB":0, "LB":0, "RB":0}
+joystick_data = {"LX":0, "LY":0, "RX":0, "RY":0, "LT":0, "RT":0, "AB":0, "BB":0, "XB":0, "YB":0, "LB":0, "RB":0}
 joystick_lock = threading.Lock()
 
 velocity = np.zeros((6, 1))
@@ -24,6 +24,9 @@ velocity_lock = threading.Lock()
 
 FK_num = np.zeros((4, 4))
 FK_num_lock = threading.Lock()
+
+T_world_tag = np.zeros((4, 4))
+T_world_tag_lock = threading.Lock()
 
 running = True
 running_lock = threading.Lock()
@@ -51,7 +54,7 @@ def joystick_monitor():
 # Motor Control Thread
 ## ----------------------------------------------------------------------------------------------------
 def motor_control():
-    global joystick_data, velocity, FK_num, running
+    global joystick_data, velocity, FK_num, T_world_tag, running
 
     def inverse_jacobian(joint_coords):
         J = num_jacobian(joint_coords)
@@ -111,6 +114,7 @@ def motor_control():
                 AB = joystick_data["AB"]
                 BB = joystick_data["BB"]
                 XB = joystick_data["XB"]
+                YB = joystick_data["YB"]
                 LB = joystick_data["LB"]
                 RB = joystick_data["RB"]
 
@@ -121,33 +125,50 @@ def motor_control():
 
             # safety interlock
             if LB and RB:
-                with velocity_lock:
-                    velocity[0] = -0.25*LY # X velocity
-                    velocity[1] = -0.25*LX # Y velocity
-
-                    velocity[4] = 0.5*RY # WY angular velocity
-                    velocity[5] = -0.5*RX # WZ angular velocity
-
-                if RT and not LT: # Z up
+                if YB:
+                    with T_world_tag_lock:
+                        tag_pose = T_world_tag
+                    if tag_pose is not None:
+                        target_pose = tag_pose[:3, 3] + np.array([0, 0, 0.1]) # move up 10cm
+                        with FK_num_lock:
+                            EE_pose = FK_num[:3, 3]
+                        P_velocity = 0.5 * (target_pose - EE_pose) # move towards target pose
+                        with velocity_lock:
+                            velocity[0] = P_velocity[0] # X velocity
+                            velocity[1] = P_velocity[1] # Y velocity
+                            velocity[2] = P_velocity[2] # Z velocity
+                    else:
+                        velocity[0] = 0
+                        velocity[1] = 0
+                        velocity[2] = 0
+                elif LY or LX or RY or RX or LT or RT or AB or BB: # manual control     
                     with velocity_lock:
-                        velocity[2] = 0.1*RT # Z velocity up
-                elif LT and not RT and (pitch_pos > 0): # Z down
-                    with velocity_lock:
-                        velocity[2] = -0.1*LT # Z velocity down
+                        velocity[0] = -0.25*LY # X velocity
+                        velocity[1] = -0.25*LX # Y velocity
+
+                        velocity[4] = 0.5*RY # WY angular velocity
+                        velocity[5] = -0.5*RX # WZ angular velocity
+
+                    if RT and not LT: # Z up
+                        with velocity_lock:
+                            velocity[2] = 0.1*RT # Z velocity up
+                    elif LT and not RT and (pitch_pos > 0): # Z down
+                        with velocity_lock:
+                            velocity[2] = -0.1*LT # Z velocity down
+                    else:
+                        with velocity_lock:
+                            velocity[2] = 0 # no Z velocity
+
+                    if AB and not BB: # close
+                        gripper_velocity = 20
+                    elif BB and not AB:
+                        gripper_velocity = -20
+                    else:
+                        gripper_velocity = 0
                 else:
                     with velocity_lock:
-                        velocity[2] = 0 # no Z velocity
-
-                if AB and not BB: # close
-                    gripper_velocity = 20
-                elif BB and not AB:
-                    gripper_velocity = -20
-                else:
-                    gripper_velocity = 0
-            else:
-                with velocity_lock:
-                    velocity = np.zeros((6, 1))
-                    gripper_velocity = 0
+                        velocity = np.zeros((6, 1))
+                        gripper_velocity = 0
 
             Jv_inv = inverse_jacobian([roll_pos, pitch_pos + np.pi/2, d3_pos, 
                                        theta4_pos + np.pi/2, theta5_pos + 5*np.pi/6, theta6_pos])
@@ -206,7 +227,7 @@ def camera_server():
 # Camera Server Thread
 ## ----------------------------------------------------------------------------------------------------
 def pose_handler():
-    global pose_queue, FK_num, running
+    global pose_queue, FK_num, T_world_tag, running
 
     T_ee_cam = np.array([[0, -0.984808, -0.173648, 0.045404],
                          [1, 0, 0, -0.00705],
@@ -223,13 +244,19 @@ def pose_handler():
                 T_cam_tag = np.eye(4)
                 T_cam_tag[:3, :3] = R
                 T_cam_tag[:3, 3] = tvec.ravel()
-                
+
                 # Compute the pose of tag in world frame
                 with FK_num_lock:
                     T_world_ee = FK_num
-                T_world_tag = T_world_ee @ T_ee_cam @ T_cam_tag
+                with T_world_tag_lock:
+                    T_world_tag = T_world_ee @ T_ee_cam @ T_cam_tag
                 print(T_world_tag)
+            else:
+                with T_world_tag_lock:
+                    T_world_tag = None
         except queue.Empty:
+            with T_world_tag_lock:
+                    T_world_tag = None
             continue
         time.sleep(0.01)
 

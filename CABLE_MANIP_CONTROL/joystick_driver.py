@@ -25,6 +25,7 @@ def joystick_read(js):
         "AB": js.get_button(0),
         "BB": js.get_button(1),
         "XB": js.get_button(2),
+        "YB": js.get_button(3),
         "LB": js.get_button(4),
         "RB": js.get_button(5),
     }
