@@ -64,9 +64,9 @@ def motor_control():
         return J_inv
 
     def get_boom_pos(d3, d3_dot):
-        use_blossoming_cal = False
+        use_blossoming_cal = True
         
-        d3 = d3 - 80/1000
+        d3 = d3 - 420/1000 + 70/1000
         if d3_dot > 0 and d3 > 1 and use_blossoming_cal: # extending
             # cubic approximation
             p1 = -0.5455
