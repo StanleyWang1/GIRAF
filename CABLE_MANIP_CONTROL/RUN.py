@@ -154,7 +154,7 @@ def motor_control():
             d3_pos = d3_pos + 0.0075*joint_velocity[2, 0]
 
             boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
-            print(boom_pos)
+            # print(boom_pos)
 
             theta4_pos = theta4_pos + 0.0075*joint_velocity[3, 0]
             theta5_pos = theta5_pos + 0.0075*joint_velocity[4, 0]
@@ -208,15 +208,15 @@ def pose_handler():
             continue
         time.sleep(0.01)
 
-joystick_thread = threading.Thread(target=joystick_monitor, daemon=True)
-motor_thread = threading.Thread(target=motor_control, daemon=True)
 camera_thread = threading.Thread(target=camera_server, daemon=True)
 pose_thread = threading.Thread(target=pose_handler, daemon=True)
+joystick_thread = threading.Thread(target=joystick_monitor, daemon=True)
+motor_thread = threading.Thread(target=motor_control, daemon=True)
 
-joystick_thread.start()
-motor_thread.start()
 camera_thread.start()
 pose_thread.start()
+joystick_thread.start()
+motor_thread.start()
 
 # Keep main thread alive
 while running:
