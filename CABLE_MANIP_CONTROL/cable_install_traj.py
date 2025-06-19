@@ -16,11 +16,11 @@ def generate_trajectory():
 
     # (3) Raise Z from 0.02 to 0.15
     z_lift = np.linspace(0.02, 0.15, 500)
-    traj3 = np.stack([np.zeros(50), np.zeros(50), z_lift], axis=1)
+    traj3 = np.stack([np.zeros(500), np.zeros(500), z_lift], axis=1)
 
     # (4) Move Y from 0 to 0.15 at fixed Z = 0.15
     y_slide = np.linspace(0, 0.15, 500)
-    traj4 = np.stack([np.zeros(50), y_slide, np.full(50, 0.15)], axis=1)
+    traj4 = np.stack([np.zeros(500), y_slide, np.full(500, 0.15)], axis=1)
 
     # Concatenate all parts
     trajectory = np.vstack([traj1, traj2, traj3, traj4])
