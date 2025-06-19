@@ -147,7 +147,7 @@ def motor_control():
                                                 [0, 1, 0, y],
                                                 [0, 0, 1, z],
                                                 [0, 0, 0, 1]])
-                        T_world_target = T_world_tag_temp @ np.linalg.inv(T_tag_target)
+                        T_world_target = T_world_tag_temp @ T_tag_target
                         target_pose = T_world_target[:3, 3]
                         with FK_num_lock:
                             EE_pose = FK_num[:3, 3]

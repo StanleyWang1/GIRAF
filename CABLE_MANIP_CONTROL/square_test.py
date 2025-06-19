@@ -2,11 +2,11 @@ import numpy as np
 
 def generate_square_trajectory():
     # Define points
-    p1 = np.array([-0.2, -0.2, 0.1])
-    p2 = np.array([-0.2,  0.2, 0.1])
-    p3 = np.array([ 0.2,  0.2, 0.1])
-    p4 = np.array([ 0.2, -0.2, 0.1])
-    p5 = np.array([-0.2, -0.2, 0.1])
+    p1 = np.array([-0.2, -0.2, -0.1])
+    p2 = np.array([-0.2,  0.2, -0.1])
+    p3 = np.array([ 0.2,  0.2, -0.1])
+    p4 = np.array([ 0.2, -0.2, -0.1])
+    p5 = np.array([-0.2, -0.2, -0.1])
 
     # Repeat each point for 500 steps
     traj1 = np.tile(p1, (500, 1))
