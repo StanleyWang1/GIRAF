@@ -1,31 +1,22 @@
 import numpy as np
 
-def generate_trajectory():
-    # (1) Hold at start
-    p1 = np.array([-0.08, 0.08, 0.02])
+def generate_custom_trajectory():
+    # Define points
+    p1 = np.array([-0.1,  0.0,  -0.02])   # hold for 500 steps
+    p2 = np.array([-0.1, -0.15, -0.02])
+    p3 = np.array([ 0.1, -0.15, -0.02])
+    p4 = np.array([ 0.1,  0.0,  -0.02])
+    p5 = np.array([ 0.0,  0.0,  -0.02])
+    p6 = np.array([ 0.0,  0.0,  -0.15])
+    p7 = np.array([ 0.0, -0.2,  -0.15])
+
+    # Build trajectory
     traj1 = np.tile(p1, (500, 1))
+    traj2 = np.array([p2, p3, p4, p5, p6, p7])  # 1 step each
 
-    # (2) Arc from 180° to 360° around center (0, 0.08, 0.02), radius 0.08
-    theta = np.linspace(np.pi, 2 * np.pi, 500)
-    center = np.array([0.0, 0.08, 0.02])
-    radius = 0.08
-    x_arc = radius * np.cos(theta)
-    y_arc = center[1] - radius * np.sin(theta)
-    z_arc = np.full_like(x_arc, center[2])
-    traj2 = np.stack([x_arc, y_arc, z_arc], axis=1)
-
-    # (3) Raise Z from 0.02 to 0.15
-    z_lift = np.linspace(0.02, 0.15, 200)
-    traj3 = np.stack([np.zeros(200), np.zeros(200), z_lift], axis=1)
-
-    # (4) Move Y from 0 to 0.15 at fixed Z = 0.15
-    y_slide = np.linspace(0, 0.15, 200)
-    traj4 = np.stack([np.zeros(200), y_slide, np.full(200, 0.15)], axis=1)
-
-    # Concatenate all parts
-    trajectory = np.vstack([traj1, traj2, traj3, traj4])
+    trajectory = np.vstack([traj1, traj2])
     return trajectory
 
 # Example usage
-trajectory = generate_trajectory()
-# print(trajectory.shape)  # Should be (300, 3)
+trajectory = generate_custom_trajectory()
+# print(trajectory.shape)  # (506, 3)

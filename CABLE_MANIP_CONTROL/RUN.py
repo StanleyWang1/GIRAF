@@ -10,8 +10,8 @@ from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disco
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
 from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
 from kinematic_model import num_jacobian, num_forward_kinematics
-# from cable_install_traj import trajectory
-from square_test import trajectory
+from cable_install_traj import trajectory
+# from square_test import trajectory
 
 ## ----------------------------------------------------------------------------------------------------
 # Joystick Controller Teleoperation
