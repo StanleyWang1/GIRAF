@@ -223,12 +223,14 @@ def pose_handler():
                 T_cam_tag = np.eye(4)
                 T_cam_tag[:3, :3] = R
                 T_cam_tag[:3, 3] = tvec.ravel()
+                
+                # Compute the pose of tag in world frame
+                with FK_num_lock:
+                    T_world_ee = FK_num
+                T_world_tag = T_world_ee @ T_ee_cam @ T_cam_tag
+                print(T_world_tag)
         except queue.Empty:
             continue
-        with FK_num_lock:
-            T_world_ee = FK_num
-        T_world_tag = T_world_ee @ T_ee_cam @ T_cam_tag
-        print(T_world_tag)
         time.sleep(0.01)
 
 camera_thread = threading.Thread(target=camera_server, daemon=True)
