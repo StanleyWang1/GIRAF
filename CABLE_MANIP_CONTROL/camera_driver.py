@@ -17,7 +17,11 @@ def draw_pose(frame, rvec, tvec):
 
 def draw_fps(frame, fps):
     text = f"FPS: {fps:.1f}"
-    cv2.putText(frame, text, (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 2)
+    text_size, _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)
+    text_x = frame.shape[1] - text_size[0] - 10  # 10 px from right edge
+    text_y = 30  # 30 px from top
+    cv2.putText(frame, text, (text_x, text_y),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
 
 def estimate_pose(tag, camera_matrix, tag_size):
     object_pts = np.array([
@@ -95,7 +99,6 @@ def run_camera_server(params=None, output_queue=None):
                                     "id": tag.tag_id,
                                     "rvec": rvec.ravel().tolist(),
                                     "tvec": tvec.ravel().tolist(),
-                                    "timestamp": curr_time
                                 }
                                 if output_queue.full():
                                     try: output_queue.get_nowait()
@@ -106,7 +109,7 @@ def run_camera_server(params=None, output_queue=None):
                         if output_queue.full():
                             try: output_queue.get_nowait()
                             except queue.Empty: pass
-                        output_queue.put_nowait({"id": None, "timestamp": curr_time})
+                        output_queue.put_nowait({"id": None})
 
                 _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
                 data = jpeg.tobytes()
