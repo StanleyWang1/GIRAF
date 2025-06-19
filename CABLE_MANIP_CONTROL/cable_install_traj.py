@@ -9,7 +9,7 @@ def generate_trajectory():
     theta = np.linspace(np.pi, 2 * np.pi, 500)
     center = np.array([0.0, 0.08, 0.02])
     radius = 0.08
-    x_arc = -radius * np.cos(theta)
+    x_arc = radius * np.cos(theta)
     y_arc = center[1] - radius * np.sin(theta)
     z_arc = np.full_like(x_arc, center[2])
     traj2 = np.stack([x_arc, y_arc, z_arc], axis=1)
