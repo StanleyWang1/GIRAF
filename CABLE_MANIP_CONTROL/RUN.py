@@ -211,9 +211,12 @@ def pose_handler():
 joystick_thread = threading.Thread(target=joystick_monitor, daemon=True)
 motor_thread = threading.Thread(target=motor_control, daemon=True)
 camera_thread = threading.Thread(target=camera_server, daemon=True)
+pose_thread = threading.Thread(target=pose_handler, daemon=True)
 
+joystick_thread.start()
 motor_thread.start()
 camera_thread.start()
+pose_thread.start()
 
 # Keep main thread alive
 while running:
