@@ -12,9 +12,14 @@ def generate_custom_trajectory():
 
     # Build trajectory
     traj1 = np.tile(p1, (500, 1))
-    traj2 = np.array([p2, p3, p4, p5, p6, p7])  # 1 step each
+    traj2 = np.tile(p2, (500, 1))
+    traj3 = np.tile(p3, (500, 1))
+    traj4 = np.tile(p4, (500, 1))
+    traj5 = np.tile(p5, (500, 1))
+    traj6 = np.tile(p6, (500, 1))
+    traj7 = np.tile(p7, (500, 1))
 
-    trajectory = np.vstack([traj1, traj2])
+    trajectory = np.vstack([traj1, traj2, traj3, traj4, traj5, traj6, traj7])
     return trajectory
 
 # Example usage
