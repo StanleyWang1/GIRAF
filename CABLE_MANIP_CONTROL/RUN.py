@@ -10,6 +10,7 @@ from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disco
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
 from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
 from kinematic_model import num_jacobian, num_forward_kinematics
+from cable_install_traj import trajectory
 
 ## ----------------------------------------------------------------------------------------------------
 # Joystick Controller Teleoperation
@@ -101,6 +102,10 @@ def motor_control():
     dmx_controller, dmx_GSW = dynamixel_connect()
     print("\033[93mTELEOP: Motors Connected!\033[0m")
 
+    tag_read = False
+    waypoint_id = 0
+    T_world_tag_temp = np.zeros((4, 4))
+
     try:
         while running:
             # unpack joystick data from dict
@@ -126,26 +131,28 @@ def motor_control():
             # safety interlock
             if LB and RB:
                 if YB:
-                    with T_world_tag_lock:
-                        T_world_tag_temp = T_world_tag
-                    if T_world_tag_temp is not None:
-                        T_tag_target = np.array([[1, 0, 0, 0],
-                                                 [0, 1, 0, -0.05],
-                                                 [0, 0, 1, -0.15],
-                                                 [0, 0, 0, 1]])
-                        T_world_target = T_world_tag_temp @ T_tag_target
+                    if not tag_read: # start reading tag
+                        with T_world_tag_lock:
+                            T_world_tag_temp = T_world_tag
+                        if T_world_tag_temp is not None:
+                            tag_read = True
+                    elif tag_read: # tag read is active
+                        x,y,z = trajectory[waypoint_id]
+                        T_tag_target = np.array([[1, 0, 0, x],
+                                                [0, 1, 0, y],
+                                                [0, 0, 1, z],
+                                                [0, 0, 0, 1]])
+                        T_world_target = T_world_tag_temp @ np.linalg.inv(T_tag_target)
                         target_pose = T_world_target[:3, 3]
                         with FK_num_lock:
                             EE_pose = FK_num[:3, 3]
                         P_velocity = 1.5 * (target_pose - EE_pose) # move towards target pose
+                        P_velocity = np.clip(P_velocity, -0.5, 0.5)
                         with velocity_lock:
                             velocity[0] = P_velocity[0] # X velocity
                             velocity[1] = P_velocity[1] # Y velocity
                             velocity[2] = P_velocity[2] # Z velocity
-                    else:
-                        velocity[0] = 0
-                        velocity[1] = 0
-                        velocity[2] = 0
+
                 elif LY or LX or RY or RX or LT or RT or AB or BB: # manual control     
                     with velocity_lock:
                         velocity[0] = -0.25*LY # X velocity
