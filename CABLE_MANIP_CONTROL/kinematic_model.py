@@ -129,7 +129,7 @@ T = sym_forward_kinematics(MDH_sym)
 print("Computed FK")
 T_corr = sym_forward_kinematics_corrected(MDH_sym)
 print("Computed FK w/ deflection correction")
-FK_num = sp.lambdify((th1, th2, d3, th4, th5, th6), T_corr[:3,3], modules='numpy')
+FK_num = sp.lambdify((th1, th2, d3, th4, th5, th6), T_corr, modules='numpy')
 
 Jv = sym_jacobian_linear(T_corr)
 print("Computed linear velocity jacobian")

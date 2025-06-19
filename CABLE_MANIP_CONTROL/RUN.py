@@ -2,13 +2,14 @@ import numpy as np
 import threading
 import queue
 import time
+import cv2
 
 from camera_driver import run_camera_server
 from control_table import MOTOR11_HOME, MOTOR12_HOME, MOTOR13_HOME, MOTOR14_OPEN, MOTOR14_CLOSED
 from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disconnect, radians_to_ticks
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
 from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
-from kinematic_model import num_jacobian
+from kinematic_model import num_jacobian, num_forward_kinematics
 
 ## ----------------------------------------------------------------------------------------------------
 # Joystick Controller Teleoperation
@@ -20,6 +21,9 @@ joystick_lock = threading.Lock()
 
 velocity = np.zeros((6, 1))
 velocity_lock = threading.Lock()
+
+FK_num = np.zeros((4, 4))
+FK_num_lock = threading.Lock()
 
 running = True
 running_lock = threading.Lock()
@@ -47,7 +51,7 @@ def joystick_monitor():
 # Motor Control Thread
 ## ----------------------------------------------------------------------------------------------------
 def motor_control():
-    global joystick_data, velocity, running
+    global joystick_data, velocity, FK_num, running
 
     def inverse_jacobian(joint_coords):
         J = num_jacobian(joint_coords)
@@ -147,6 +151,10 @@ def motor_control():
 
             Jv_inv = inverse_jacobian([roll_pos, pitch_pos + np.pi/2, d3_pos, 
                                        theta4_pos + np.pi/2, theta5_pos + 5*np.pi/6, theta6_pos])
+            with FK_num_lock:
+                FK_num = num_forward_kinematics([roll_pos, pitch_pos + np.pi/2, d3_pos, 
+                                             theta4_pos + np.pi/2, theta5_pos + 5*np.pi/6, theta6_pos])
+            
             joint_velocity = Jv_inv @ velocity
 
             roll_pos = roll_pos + 0.0075*joint_velocity[0, 0]
@@ -190,7 +198,7 @@ def camera_server():
     global pose_queue, running
     params = {
         "port": 8485,
-        "tag_size": 0.065  # meters
+        "tag_size": 0.048  # meters
     }
     run_camera_server(params=params, output_queue=pose_queue)
 
@@ -198,14 +206,29 @@ def camera_server():
 # Camera Server Thread
 ## ----------------------------------------------------------------------------------------------------
 def pose_handler():
-    global pose_queue, running
+    global pose_queue, FK_num, running
+
+    T_ee_cam = np.array([[0, -0.984808, -0.173648, 0.045404],
+                         [1, 0, 0, -0.00705],
+                         [0, -0.173648, 0.984808, -0.076365],
+                         [0, 0, 0, 1]])
+
     while running:
         try:
             pose = pose_queue.get(timeout=1.0)
             if pose["id"] is not None:
-                print(f"Pose received: {pose}")
+                rvec = np.array(pose["rvec"]).reshape(3, 1)
+                tvec = np.array(pose["tvec"]).reshape(3, 1)
+                R, _ = cv2.Rodrigues(rvec)
+                T_cam_tag = np.eye(4)
+                T_cam_tag[:3, :3] = R
+                T_cam_tag[:3, 3] = tvec.ravel()
         except queue.Empty:
             continue
+        with FK_num_lock:
+            T_world_ee = FK_num
+        T_world_tag = T_world_ee @ T_ee_cam @ T_cam_tag
+        print(T_world_tag)
         time.sleep(0.01)
 
 camera_thread = threading.Thread(target=camera_server, daemon=True)
