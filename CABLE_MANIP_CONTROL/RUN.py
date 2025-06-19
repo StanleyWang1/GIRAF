@@ -138,6 +138,7 @@ def motor_control():
                             tag_read = True
                     elif tag_read: # tag read is active
                         x,y,z = trajectory[waypoint_id]
+                        waypoint_id += 1
                         T_tag_target = np.array([[1, 0, 0, x],
                                                 [0, 1, 0, y],
                                                 [0, 0, 1, z],
@@ -153,7 +154,9 @@ def motor_control():
                             velocity[1] = P_velocity[1] # Y velocity
                             velocity[2] = P_velocity[2] # Z velocity
 
-                elif LY or LX or RY or RX or LT or RT or AB or BB: # manual control     
+                elif LY or LX or RY or RX or LT or RT or AB or BB: # manual control  
+                    tag_read = False
+
                     with velocity_lock:
                         velocity[0] = -0.25*LY # X velocity
                         velocity[1] = -0.25*LX # Y velocity
