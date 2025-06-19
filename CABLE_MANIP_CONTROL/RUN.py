@@ -130,8 +130,8 @@ def motor_control():
                         T_world_tag_temp = T_world_tag
                     if T_world_tag_temp is not None:
                         T_tag_target = np.array([[1, 0, 0, 0],
-                                                 [0, 1, 0, 0.05],
-                                                 [0, 0, 1, 0.15],
+                                                 [0, 1, 0, -0.05],
+                                                 [0, 0, 1, -0.15],
                                                  [0, 0, 0, 1]])
                         T_world_target = T_world_tag_temp @ T_tag_target
                         target_pose = T_world_target[:3, 3]
