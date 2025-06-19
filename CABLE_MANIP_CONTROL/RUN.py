@@ -137,8 +137,11 @@ def motor_control():
                         if T_world_tag_temp is not None:
                             tag_read = True
                     elif tag_read: # tag read is active
-                        x,y,z = trajectory[waypoint_id]
-                        waypoint_id += 1
+                        if waypoint_id < len(trajectory):
+                            x, y, z = trajectory[waypoint_id]
+                            waypoint_id += 1
+                        else:
+                            x, y, z = trajectory[-1]
                         T_tag_target = np.array([[1, 0, 0, x],
                                                 [0, 1, 0, y],
                                                 [0, 0, 1, z],
