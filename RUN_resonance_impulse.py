@@ -56,7 +56,7 @@ def motor_control_with_logging():
 
     print("\033[93mPress Enter to jog Boom Up\033[0m")
     input()
-    pitch_sweep = np.linspace(0, 0.3, 500)
+    pitch_sweep = np.linspace(0, 0.5, 500)
     for pitch_val in pitch_sweep:
         motor_drive(candle, motors, 0.0, pitch_val, 0.0)
         time.sleep(0.005)
