@@ -21,8 +21,8 @@ running = True
 running_lock = threading.Lock()
 
 # Test Parameters
-AMPLITUDE = 0.05 # rad
-FREQUENCY = 0.5 # Hz
+AMPLITUDE = 0.1 # rad
+FREQUENCY = 0.75 # Hz
 
 ## ----------------------------------------------------------------------------------------------------
 # Joystick Monitoring Thread
