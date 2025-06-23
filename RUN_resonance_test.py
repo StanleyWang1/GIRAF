@@ -22,7 +22,7 @@ running_lock = threading.Lock()
 
 # Test Parameters
 AMPLITUDE = 0.05 # rad
-FREQUENCY = 1.0 # Hz
+FREQUENCY = 0.5 # Hz
 
 ## ----------------------------------------------------------------------------------------------------
 # Joystick Monitoring Thread
@@ -85,7 +85,7 @@ def motor_control():
                 break
             else: # engage oscillation trajectory
                 t = time.time() - t_start
-                pitch_pos = AMPLITUDE/2 * (1 - np.cos(2 * np.pi * FREQUENCY * t)) + 0.3 # 0 to 0.1 rad at 1 Hz
+                pitch_pos = AMPLITUDE/2 * (1 - np.cos(2 * np.pi * FREQUENCY * t)) # 0 to 0.1 rad at 1 Hz
 
             # check status then drive motors
             motor_status(candle, motors)
