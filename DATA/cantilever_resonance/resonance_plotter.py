@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load CSV
-df = pd.read_csv("./DATA/cantilever_resonance/boom_50cm_trial3.csv")
+df = pd.read_csv("./DATA/cantilever_resonance/boom_100cm_trial1.csv")
 
 # Plot accelerometer axes
 plt.figure()
