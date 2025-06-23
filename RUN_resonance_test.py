@@ -69,6 +69,15 @@ def motor_control():
     print("\033[93mTELEOP: Dynamixel Active and Homed!\033[0m")
     time.sleep(0.5)
     
+    print("\033[93mTELEOP: Press Enter to Jog Boom Up!\033[0m")
+    input() # BLOCK and wait for user to press Enter
+
+    pitch_sweep = np.linspace(0, 0.2, 500)  # generate pitch values
+
+    for pitch_val in pitch_sweep:
+        motor_drive(candle, motors, 0.0, pitch_val, 0.0)
+        time.sleep(0.005)
+
     print("\033[93mTELEOP: Press Enter to Begin Resonance Test!\033[0m")
     input() # BLOCK and wait for user to press Enter
     
@@ -85,7 +94,7 @@ def motor_control():
                 break
             else: # engage oscillation trajectory
                 t = time.time() - t_start
-                pitch_pos = AMPLITUDE/2 * (1 - np.cos(2 * np.pi * FREQUENCY * t)) # 0 to 0.1 rad at 1 Hz
+                pitch_pos = AMPLITUDE/2 * (1 - np.cos(2 * np.pi * FREQUENCY * t)) + 0.2 # 0 to 0.1 rad at 1 Hz
 
             # check status then drive motors
             motor_status(candle, motors)
