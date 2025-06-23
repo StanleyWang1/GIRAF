@@ -17,7 +17,7 @@ running_lock = threading.Lock()
 
 AMPLITUDE = 0.1  # rad
 FREQUENCY = 0.75  # Hz
-CSV_PATH = "./DATA/cantilever_resonance/log1.csv"
+CSV_PATH = "./DATA/cantilever_resonance/boom_50cm_trial1.csv"
 
 def joystick_monitor():
     global joystick_data, running
@@ -66,7 +66,7 @@ def motor_control_with_logging():
 
     os.makedirs(os.path.dirname(CSV_PATH), exist_ok=True)
     with open(CSV_PATH, 'w') as f:
-        f.write("t,pitch,accel_x,accel_y,accel_z\n")
+        f.write("t,accel_x,accel_y,accel_z\n")
 
     imu_device, imu_queue = imu_setup()
     t_start = time.time()
