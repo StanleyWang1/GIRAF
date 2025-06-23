@@ -17,7 +17,7 @@ running_lock = threading.Lock()
 
 AMPLITUDE = 0.1  # rad
 FREQUENCY = 0.75  # Hz
-CSV_PATH = "./DATA/cantilever_resonance/boom_150cm_trial1.csv"
+CSV_PATH = "./DATA/cantilever_resonance/boom_150cm_trial4.csv"
 
 def joystick_monitor():
     global joystick_data, running
