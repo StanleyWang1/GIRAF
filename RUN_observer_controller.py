@@ -100,7 +100,8 @@ def observer_loop(candle, motors):
         np.zeros(int(10 * 500))
     ])
     t_start = time.time()
-
+    pitch_pos = 0.1
+    
     while running:
         if i < len(u_series):
             u_task = u_series[i]
