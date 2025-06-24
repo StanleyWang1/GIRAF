@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 # Load both files
 df1 = pd.read_csv("./DATA/observer_damping/no_damping_boom_150cm_trial2.csv")
-df2 = pd.read_csv("./DATA/observer_damping/quarter_damping_boom_150cm_trial2.csv")
+df2 = pd.read_csv("./DATA/observer_damping/full_damping_boom_150cm_trial1.csv")
 
 # Plot acceleration
 plt.figure(figsize=(10, 4))

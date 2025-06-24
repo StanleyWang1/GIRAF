@@ -1,45 +1,49 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
-# Load the CSV
-df = pd.read_csv("./DATA/observer_damping/no_damping_boom_150cm_trial2.csv")  # Replace with your actual file path
+# Load your CSV
+df = pd.read_csv("./DATA/observer_damping/quarter_damping_boom_150cm_trial1.csv")  # Replace with your path
 
-# Time
-t = df["t"]
-
-# Extract signals
-accel = df["accel_x"]
-pitch_pos = df["pitch_pos"]
-x1_hat = df["x1_hat"]  # Estimated position
-x2_hat = df["x2_hat"]  # Estimated velocity
+# Calculate energy-like quantity for instability check
+df["energy"] = df["x1_hat"]**2 + df["x2_hat"]**2
 
 # Plot acceleration
 plt.figure(figsize=(10, 4))
-plt.plot(t, accel, label="Measured Acceleration", alpha=0.6)
+plt.plot(df["t"], df["accel_x"], label="accel_x", alpha=0.8)
 plt.xlabel("Time (s)")
-plt.ylabel("Accel X (m/s²)")
+plt.ylabel("Acceleration (m/s²)")
+plt.title("Acceleration Signal")
 plt.grid(True)
 plt.legend()
-plt.title("Accelerometer Reading")
 
-# Plot estimated state vs command
+# Plot observer states
 plt.figure(figsize=(10, 4))
-plt.plot(t, pitch_pos, label="Base Pitch Pos (integrated)")
-plt.plot(t, x1_hat, label="Estimated Tip Displacement")
+plt.plot(df["t"], df["x1_hat"], label="x̂₁ (Displacement)", alpha=0.8)
+plt.plot(df["t"], df["x2_hat"], label="x̂₂ (Velocity)", alpha=0.8)
 plt.xlabel("Time (s)")
-plt.ylabel("Displacement (rad or m)")
+plt.ylabel("Estimate")
+plt.title("Observer State Estimates")
 plt.grid(True)
 plt.legend()
-plt.title("Pitch Command vs Estimated Tip Displacement")
 
-# Plot estimated velocity
+# Plot pitch command (optional)
 plt.figure(figsize=(10, 4))
-plt.plot(t, x2_hat, label="Estimated Tip Velocity")
+plt.plot(df["t"], df["pitch_pos"], label="Pitch Pos (rad)", color='purple')
 plt.xlabel("Time (s)")
-plt.ylabel("Velocity (rad/s or m/s)")
+plt.ylabel("Pitch Position (rad)")
+plt.title("Pitch Command vs Time")
 plt.grid(True)
 plt.legend()
-plt.title("Estimated Tip Velocity (Observer)")
+
+# Plot energy
+plt.figure(figsize=(10, 4))
+plt.plot(df["t"], df["energy"], label="x̂₁² + x̂₂²", color='darkred')
+plt.xlabel("Time (s)")
+plt.ylabel("Energy (arb. units)")
+plt.title("Observer Estimated Energy Over Time")
+plt.grid(True)
+plt.legend()
 
 plt.tight_layout()
 plt.show()

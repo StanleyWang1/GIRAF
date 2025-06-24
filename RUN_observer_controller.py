@@ -22,7 +22,7 @@ latest_accel = 0.0
 csv_buffer = []
 buffer_lock = threading.Lock()
 
-CSV_PATH = "./DATA/observer_damping/full_damping_boom_150cm_trial1.csv"
+CSV_PATH = "./DATA/observer_damping/full_damping_boom_150cm_trial2.csv"
 
 wn = 12.763
 z = 0.0194
@@ -62,7 +62,7 @@ def imu_loop():
                 acc = pkt.acceleroMeter
                 if acc:
                     with buffer_lock:
-                        latest_accel = acc.x + 8
+                        latest_accel = acc.x + 8.25
         time.sleep(0.001)
     device.close()
 
@@ -90,7 +90,8 @@ def observer_loop(candle, motors):
     # Observer damping term
     Kd = 2*z*wn
 
-    dt = 1.0 / 500.0
+    prev_time = time.time()
+    # dt = 1.0 / 500.0
     # duration = 11
     i = 0
 
@@ -113,6 +114,10 @@ def observer_loop(candle, motors):
 
         with buffer_lock:
             y = latest_accel
+
+        curr_time = time.time()
+        dt = curr_time - prev_time
+        prev_time = curr_time
 
         pitch_pos += dt * u
         motor_drive(candle, motors, 0.0, pitch_pos, 0.0)
