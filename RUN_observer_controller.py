@@ -22,9 +22,7 @@ latest_accel = 0.0
 csv_buffer = []
 buffer_lock = threading.Lock()
 
-AMPLITUDE = 0.1  # rad
-FREQUENCY = 0.75  # Hz
-CSV_PATH = "./DATA/cantilever_resonance/boom_150cm_trial4.csv"
+CSV_PATH = "./DATA/observer_damping/no_damping_boom_150cm_trial1.csv"
 
 wn = 12.763
 z = 0.0194
@@ -106,7 +104,7 @@ def observer_loop(candle, motors):
     while running:
         if i < len(u_series):
             u_task = u_series[i]
-            u = u_task - Kd * x_hat[1, 0]
+            u = u_task # - Kd * x_hat[1, 0]
         else:
             u = 0
             with running_lock:
@@ -139,7 +137,7 @@ def initialize_motors():
 
     print("\033[93mPress Enter to jog Boom Up\033[0m")
     input()
-    pitch_sweep = np.linspace(0, 0.5, 500)
+    pitch_sweep = np.linspace(0, 0.1, 500)
     for pitch_val in pitch_sweep:
         motor_drive(candle, motors, 0.0, pitch_val, 0.0)
         time.sleep(0.005)
@@ -156,10 +154,11 @@ def main():
 
     joystick_thread.start()
     imu_thread.start()
-    logger_thread.start()
 
     candle, motors, dmx_ctrl = initialize_motors()
     observer_thread = threading.Thread(target=observer_loop, args=(candle, motors), daemon=True)
+    logger_thread.start()
+    print("\033[93mSTARTING OBSERVER CONTROLLER\033[0m")
     observer_thread.start()
 
     try:
