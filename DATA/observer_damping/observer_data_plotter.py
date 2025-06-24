@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load the CSV
-df = pd.read_csv("./DATA/observer_damping/no_damping_boom_150cm_trial1.csv")  # Replace with your actual file path
+df = pd.read_csv("./DATA/observer_damping/no_damping_boom_150cm_trial2.csv")  # Replace with your actual file path
 
 # Time
 t = df["t"]
