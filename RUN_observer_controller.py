@@ -22,7 +22,7 @@ latest_accel = 0.0
 csv_buffer = []
 buffer_lock = threading.Lock()
 
-CSV_PATH = "./DATA/observer_damping/quarter_damping_boom_150cm_trial1.csv"
+CSV_PATH = "./DATA/observer_damping/quarter_damping_boom_150cm_trial2.csv"
 
 wn = 12.763
 z = 0.0194
