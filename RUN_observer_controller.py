@@ -105,7 +105,7 @@ def observer_loop(candle, motors):
     while running:
         if i < len(u_series):
             u_task = u_series[i]
-            u = u_task - Kd * x_hat[1, 0]
+            u = u_task + Kd * x_hat[1, 0]
         else:
             u = 0
             with running_lock:
