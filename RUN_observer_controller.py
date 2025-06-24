@@ -100,7 +100,7 @@ def observer_loop(candle, motors):
         np.zeros(int(10 * 500))
     ])
     t_start = time.time()
-    pitch_pos = 0.1
+    pitch_pos = 0.2
 
     while running:
         if i < len(u_series):
@@ -138,7 +138,7 @@ def initialize_motors():
 
     print("\033[93mPress Enter to jog Boom Up\033[0m")
     input()
-    pitch_sweep = np.linspace(0, 0.1, 500)
+    pitch_sweep = np.linspace(0, 0.2, 500)
     for pitch_val in pitch_sweep:
         motor_drive(candle, motors, 0.0, pitch_val, 0.0)
         time.sleep(0.005)
