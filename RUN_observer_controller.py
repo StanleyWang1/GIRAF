@@ -62,7 +62,7 @@ def imu_loop():
                 acc = pkt.acceleroMeter
                 if acc:
                     with buffer_lock:
-                        latest_accel = acc.x
+                        latest_accel = acc.x + 9.81
         time.sleep(0.001)
     device.close()
 
@@ -101,7 +101,7 @@ def observer_loop(candle, motors):
     ])
     t_start = time.time()
     pitch_pos = 0.1
-    
+
     while running:
         if i < len(u_series):
             u_task = u_series[i]
