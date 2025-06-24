@@ -22,7 +22,7 @@ latest_accel = 0.0
 csv_buffer = []
 buffer_lock = threading.Lock()
 
-CSV_PATH = "./DATA/observer_damping/no_damping_boom_150cm_trial1.csv"
+CSV_PATH = "./DATA/observer_damping/no_damping_boom_150cm_trial2.csv"
 
 wn = 12.763
 z = 0.0194
@@ -62,7 +62,7 @@ def imu_loop():
                 acc = pkt.acceleroMeter
                 if acc:
                     with buffer_lock:
-                        latest_accel = acc.x + 9.81
+                        latest_accel = acc.x + 8
         time.sleep(0.001)
     device.close()
 
