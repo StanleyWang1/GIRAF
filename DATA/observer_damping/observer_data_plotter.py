@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load your CSV
-df = pd.read_csv("./DATA/observer_damping/full_damping_boom_150cm_trial2.csv")  # Replace with your path
+df = pd.read_csv("./DATA/observer_damping/quarter_damping_boom_150cm_trial2.csv")  # Replace with your path
 
 # Calculate energy-like quantity for instability check
 df["energy"] = df["x1_hat"]**2 + df["x2_hat"]**2

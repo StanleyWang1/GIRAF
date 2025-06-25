@@ -90,8 +90,8 @@ def observer_loop(candle, motors):
     # Observer damping term
     Kd = 2*z*wn / 4
 
-    prev_time = time.time()
-    # dt = 1.0 / 500.0
+    # prev_time = time.time()
+    dt = 1.0 / 500.0
     # duration = 11
     i = 0
 
@@ -115,9 +115,9 @@ def observer_loop(candle, motors):
         with buffer_lock:
             y = latest_accel
 
-        curr_time = time.time()
-        dt = curr_time - prev_time
-        prev_time = curr_time
+        # curr_time = time.time()
+        # dt = curr_time - prev_time
+        # prev_time = curr_time
 
         pitch_pos += dt * u
         motor_drive(candle, motors, 0.0, pitch_pos, 0.0)
