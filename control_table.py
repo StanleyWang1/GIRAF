@@ -2,8 +2,8 @@
 MOTOR11_HOME = 2000
 MOTOR12_HOME = 1950
 MOTOR13_HOME = 10
-MOTOR14_OPEN = 4080 # fully open
-MOTOR14_CLOSED = 4080 + 3800 # fully closed
+MOTOR14_OPEN = 100 # fully open
+MOTOR14_CLOSED = 3800 # fully closed
 
 # XH-430-W250-T Serial Addresses
 OPERATING_MODE = (11, 1)
