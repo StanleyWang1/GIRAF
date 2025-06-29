@@ -142,6 +142,7 @@ def motor_control():
                         waypoint_id += 1
                     else:
                         x, y, z = trajectory[-1]
+                        
                     T_tag_target = np.array([[1, 0, 0, x],
                                             [0, 1, 0, y],
                                             [0, 0, 1, z],
