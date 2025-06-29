@@ -64,7 +64,7 @@ def motor_control():
         return J_inv
 
     def get_boom_pos(d3, d3_dot):
-        use_blossoming_cal = True
+        use_blossoming_cal = False
         
         d3 = d3 - 400/1000 + 70/1000
         if d3_dot > 0 and d3 > 1 and use_blossoming_cal: # extending
