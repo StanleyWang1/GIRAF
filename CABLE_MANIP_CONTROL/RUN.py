@@ -10,7 +10,8 @@ from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disco
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
 from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
 from kinematic_model import num_jacobian, num_forward_kinematics
-from cable_install_traj import trajectory
+
+from new_cable_traj import trajectory
 # from square_test import trajectory
 
 ## ----------------------------------------------------------------------------------------------------
@@ -157,7 +158,7 @@ def motor_control():
                     if tag_read:
                         with FK_num_lock:
                             EE_pose = FK_num[:3, 3]
-                        P_velocity = 1.5 * (target_pose - EE_pose) # move towards target pose
+                        P_velocity = 2 * (target_pose - EE_pose) # move towards target pose
                         P_velocity = np.clip(P_velocity, -0.5, 0.5) # set velocity limits
                         with velocity_lock:
                             velocity[0] = P_velocity[0] # X velocity
@@ -276,8 +277,8 @@ def pose_handler():
                     T_world_ee = FK_num
                 with T_world_tag_lock:
                     T_world_tag = T_world_ee @ T_ee_cam @ T_cam_tag
-                T_tag_cam = np.linalg.inv(T_world_tag) @ T_world_ee @ T_ee_cam
-                print(T_tag_cam[:3, 3])
+                # T_tag_cam = np.linalg.inv(T_world_tag) @ T_world_ee @ T_ee_cam
+                # print(T_tag_cam[:3, 3])
             else:
                 with T_world_tag_lock:
                     T_world_tag = None
