@@ -132,27 +132,33 @@ def motor_control():
             # safety interlock
             if LB and RB:
                 if YB:
-                    if not tag_read: # start reading tag
-                        with T_world_tag_lock:
-                            T_world_tag_temp = T_world_tag
-                        if T_world_tag_temp is not None:
-                            tag_read = True
-                    elif tag_read: # tag read is active
-                        if waypoint_id < len(trajectory):
-                            x, y, z = trajectory[waypoint_id]
-                            waypoint_id += 1
-                        else:
-                            x, y, z = trajectory[-1]
-                        T_tag_target = np.array([[1, 0, 0, x],
-                                                [0, 1, 0, y],
-                                                [0, 0, 1, z],
-                                                [0, 0, 0, 1]])
+                    # Y BUTTON -- enter autonomous mode!
+
+                    # Get x,y,z point from loaded trajectory
+                    if waypoint_id < len(trajectory):
+                        x, y, z = trajectory[waypoint_id]
+                        waypoint_id += 1
+                    else:
+                        x, y, z = trajectory[-1]
+                    T_tag_target = np.array([[1, 0, 0, x],
+                                            [0, 1, 0, y],
+                                            [0, 0, 1, z],
+                                            [0, 0, 0, 1]])
+                    
+                    # Update tag pose if available
+                    with T_world_tag_lock:
+                        T_world_tag_temp = T_world_tag
+                    if T_world_tag_temp is not None: # valid tag being read
+                        tag_read = True # tag has been seen
                         T_world_target = T_world_tag_temp @ T_tag_target
                         target_pose = T_world_target[:3, 3]
+
+                    # If tag pose available, plan trajectory:
+                    if tag_read:
                         with FK_num_lock:
                             EE_pose = FK_num[:3, 3]
                         P_velocity = 1.5 * (target_pose - EE_pose) # move towards target pose
-                        P_velocity = np.clip(P_velocity, -0.5, 0.5)
+                        P_velocity = np.clip(P_velocity, -0.5, 0.5) # set velocity limits
                         with velocity_lock:
                             velocity[0] = P_velocity[0] # X velocity
                             velocity[1] = P_velocity[1] # Y velocity
@@ -270,7 +276,8 @@ def pose_handler():
                     T_world_ee = FK_num
                 with T_world_tag_lock:
                     T_world_tag = T_world_ee @ T_ee_cam @ T_cam_tag
-                print(T_world_tag)
+                T_tag_cam = np.linalg.inv(T_world_tag) @ T_world_ee @ T_ee_cam
+                print(T_tag_cam[:3, 3])
             else:
                 with T_world_tag_lock:
                     T_world_tag = None
