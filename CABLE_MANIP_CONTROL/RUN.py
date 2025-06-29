@@ -107,7 +107,8 @@ def motor_control():
     tag_read = False
     waypoint_id = 0
     T_world_tag_temp = np.zeros((4, 4))
-
+    T_world_tag_latest = np.zeros((4, 4))
+    
     try:
         while running:
             # unpack joystick data from dict
@@ -151,11 +152,13 @@ def motor_control():
                         T_world_tag_temp = T_world_tag
                     if T_world_tag_temp is not None: # valid tag being read
                         tag_read = True # tag has been seen
-                        T_world_target = T_world_tag_temp @ T_tag_target
-                        target_pose = T_world_target[:3, 3]
-
+                        T_world_tag_latest = T_world_tag_temp # save latest tag pose
+                    
                     # If tag pose available, plan trajectory:
                     if tag_read:
+                        T_world_target = T_world_tag_latest @ T_tag_target
+                        target_pose = T_world_target[:3, 3]
+
                         with FK_num_lock:
                             EE_pose = FK_num[:3, 3]
                         P_velocity = 2 * (target_pose - EE_pose) # move towards target pose

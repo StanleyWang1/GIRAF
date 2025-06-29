@@ -2,12 +2,12 @@ import numpy as np
 
 def generate_custom_trajectory():
     # Define key points
-    p0 = np.array([-0.25,  0.00, -0.20])
-    p1 = np.array([-0.25, -0.05, -0.20])
-    p2 = np.array([-0.12, -0.05, -0.20])
-    p3 = np.array([-0.12,  0.05, -0.20])
-    p4 = np.array([-0.17,  0.02, -0.25])
-    p5 = np.array([-0.17, -0.20, -0.20])
+    p0 = np.array([-0.25,  0.00, -0.15])
+    p1 = np.array([-0.25, -0.05, -0.15])
+    p2 = np.array([-0.12, -0.05, -0.15])
+    p3 = np.array([-0.12,  0.05, -0.15])
+    p4 = np.array([-0.17,  0.02, -0.20])
+    p5 = np.array([-0.17, -0.20, -0.15])
 
     # 400-point constant segment
     traj0 = np.tile(p0, (400, 1))
