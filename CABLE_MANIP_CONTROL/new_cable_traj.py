@@ -4,8 +4,8 @@ def generate_custom_trajectory():
     # Define key points
     p0 = np.array([-0.25,  0.00, -0.1])
     p1 = np.array([-0.25, -0.05, -0.1])
-    p2 = np.array([-0.1, -0.05, -0.05])
-    p3 = np.array([-0.1,  0.05, -0.05])
+    p2 = np.array([-0.1, -0.05, -0.075])
+    p3 = np.array([-0.1,  0.05, -0.075])
     p4 = np.array([-0.17,  0.02, -0.1])
     p5 = np.array([-0.17, -0.1, -0.1])
 
