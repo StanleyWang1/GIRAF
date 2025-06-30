@@ -9,7 +9,7 @@ def generate_custom_trajectory():
     p3 = np.array([-0.1,  0.05, -0.1])
     p4 = np.array([-0.15,  0.02, -0.1])
     p5 = np.array([-0.15, -0.1, -0.1])
-    p6 = np.array([-0.25, -0.1, -0.2])
+    p6 = np.array([-0.2, -0.1, -0.25])
     # 400-point constant segment
     traj0 = np.tile(p0, (400, 1))
 
