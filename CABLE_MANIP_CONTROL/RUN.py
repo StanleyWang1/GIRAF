@@ -67,7 +67,7 @@ def motor_control():
     def get_boom_pos(d3, d3_dot):
         use_blossoming_cal = False
         
-        d3 = d3 - 400/1000 + 70/1000
+        d3 = d3 - 80/1000
         if d3_dot > 0 and d3 > 1 and use_blossoming_cal: # extending
             # cubic approximation
             p1 = -0.5455
@@ -142,7 +142,7 @@ def motor_control():
                         waypoint_id += 1
                     else:
                         x, y, z = trajectory[-1]
-                        
+
                     T_tag_target = np.array([[1, 0, 0, x],
                                             [0, 1, 0, y],
                                             [0, 0, 1, z],
