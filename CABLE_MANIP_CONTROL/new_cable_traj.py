@@ -23,13 +23,13 @@ def generate_custom_trajectory():
     traj0 = np.tile(p0, (400, 1))
 
     # 400-point linear interpolations
-    traj1 = np.linspace(p0, p0A,  100)
-    traj1A = np.linspace(p0A, p1, 100)
-    traj2 = np.linspace(p1, p2,   100)
-    traj3 = np.linspace(p2, p3,   100)
-    traj4 = np.linspace(p3, p4,   100)
-    traj5 = np.linspace(p4, p5,   100)
-    traj6 = np.linspace(p5, p6,   100)
+    traj1 = np.linspace(p0, p0A,  400)
+    traj1A = np.linspace(p0A, p1, 400)
+    traj2 = np.linspace(p1, p2,   400)
+    traj3 = np.linspace(p2, p3,   400)
+    traj4 = np.linspace(p3, p4,   400)
+    traj5 = np.linspace(p4, p5,   400)
+    traj6 = np.linspace(p5, p6,   400)
 
     # Combine all segments
     trajectory = np.vstack([traj0, traj1, traj1A, traj2, traj3, traj4, traj5, traj6])
