@@ -62,7 +62,7 @@ def imu_loop():
                 acc = pkt.acceleroMeter
                 if acc:
                     with buffer_lock:
-                        latest_accel = acc.x + 8.25
+                        latest_accel = acc.x # + 8.25
         time.sleep(0.001)
     device.close()
 
@@ -70,7 +70,7 @@ def csv_logger():
     global csv_buffer, running
     os.makedirs(os.path.dirname(CSV_PATH), exist_ok=True)
     with open(CSV_PATH, 'w') as f:
-        f.write("t,accel_x,pitch_pos,x1_hat,x2_hat\n")
+        f.write("t,accel_x,pitch_pos\n")#,x1_hat,x2_hat\n")
         while running:
             time.sleep(0.5)
             with buffer_lock:
@@ -128,7 +128,7 @@ def observer_loop(candle, motors):
 
         t_now = time.time() - t_start
         with buffer_lock:
-            csv_buffer.append((t_now, y, pitch_pos, x_hat[0,0], x_hat[1,0]))
+            csv_buffer.append((t_now, y, pitch_pos))#, x_hat[0,0], x_hat[1,0]))
 
         i += 1
         time.sleep(dt)

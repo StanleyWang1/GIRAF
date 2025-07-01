@@ -200,6 +200,10 @@ def motor_control():
                     with velocity_lock:
                         velocity = np.zeros((6, 1))
                         gripper_velocity = 0
+            else:
+                with velocity_lock:
+                    velocity = np.zeros((6, 1))
+                    gripper_velocity = 0
 
             Jv_inv = inverse_jacobian([roll_pos, pitch_pos + np.pi/2, d3_pos, 
                                        theta4_pos + np.pi/2, theta5_pos + 5*np.pi/6, theta6_pos])
@@ -227,7 +231,7 @@ def motor_control():
             # joint limits
             roll_pos = max(min(roll_pos, np.pi/2), -np.pi/2)
             pitch_pos = max(min(pitch_pos, np.pi/2), 0)
-            boom_pos = max(min(boom_pos, 0), -25)
+            boom_pos = max(min(boom_pos, 0), -35)
             gripper_pos = int(max(min(gripper_pos, MOTOR14_CLOSED), MOTOR14_OPEN))
             
             # check status then drive motors

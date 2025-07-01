@@ -1,12 +1,14 @@
 import time
 import math
-from dynamixel_sdk import *  # Uses Dynamixel SDK library
+from dynamixel_sdk import * # Uses Dynamixel SDK library
 
 # ----------- Parameters -----------
 PORT_NAME = 'COM8'
 BAUDRATE = 57600
 PROTOCOL_VERSION = 2.0
+
 DXL_ID = 24
+
 ADDR_GOAL_POSITION = 116
 ADDR_PRESENT_POSITION = 132
 ADDR_OPERATING_MODE = 11
@@ -16,10 +18,10 @@ TORQUE_ENABLE = 1
 OPERATING_MODE_POSITION = 3  # Position Control Mode
 DXL_MIN_POS = 0
 DXL_MAX_POS = 4095
-DXL_CENTER = 2048
+DXL_CENTER = 2048 - 120
 
 f_swim = 3.0  # Hz
-theta_mid = DXL_CENTER - 120  # Midpoint in ticks
+theta_mid = DXL_CENTER  # Midpoint in ticks
 A_swim = 300  # Amplitude in ticks
 duration = 25.0  # seconds
 
