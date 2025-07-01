@@ -1,0 +1,3 @@
+Boom raised to a height
+Velocity applied to pitch joint for 0.5 sec
+Resulting vibrations (X_accel) from this impulse recorded

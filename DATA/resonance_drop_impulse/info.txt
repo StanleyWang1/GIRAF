@@ -1,0 +1,6 @@
+See RUN_resonance_impulse.py
+
+Boom was raised to a certain pitch angle
+Pitch motor then disengaged (turned off)
+Boom falls to horizontal position (hitting/resting on bar)
+Drop impulse oscillations recorded
