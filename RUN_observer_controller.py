@@ -60,12 +60,13 @@ def imu_loop():
         imuData = queue.tryGet()
         if imuData:
             for pkt in imuData.packets:
-                lin_acc = pkt.linearAcceleration
+                lin_acc = pkt.linearAcc  # ✅ correct attribute
                 if lin_acc:
                     with buffer_lock:
                         latest_accel = (lin_acc.x, lin_acc.y, lin_acc.z)
         time.sleep(0.001)
     device.close()
+
 
 def csv_logger():
     global csv_buffer, running
