@@ -10,6 +10,9 @@ from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disco
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
 from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
 
+# Save Path
+CSV_PATH = "./DATA/resonance_step_velocity/boom_2p0in_trial1.csv"
+
 # Globals
 joystick_data = {"LX":0, "LY":0, "RX":0, "RY":0, "LT":0, "RT":0, "AB":0, "BB":0, "XB":0, "LB":0, "RB":0}
 joystick_lock = threading.Lock()
@@ -21,8 +24,6 @@ x_hat = np.zeros((2, 1))
 latest_accel = (0.0, 0.0, 0.0)  # now storing x, y, z
 csv_buffer = []
 buffer_lock = threading.Lock()
-
-CSV_PATH = "./DATA/resonance_step_velocity/boom_2p0in_trial3.csv"
 
 wn = 12.763
 z = 0.0194
