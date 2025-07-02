@@ -18,11 +18,11 @@ TORQUE_ENABLE = 1
 OPERATING_MODE_POSITION = 3  # Position Control Mode
 DXL_MIN_POS = 0
 DXL_MAX_POS = 4095
-DXL_CENTER = 2048 - 120
+DXL_CENTER = 2048 - 130
 
-f_swim = 3.0  # Hz
+f_swim = 2.0  # Hz
 theta_mid = DXL_CENTER  # Midpoint in ticks
-A_swim = 300  # Amplitude in ticks
+A_swim = 500  # Amplitude in ticks
 duration = 25.0  # seconds
 
 # ----------- Setup Communication -----------
