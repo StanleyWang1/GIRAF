@@ -22,7 +22,7 @@ latest_accel = 0.0
 csv_buffer = []
 buffer_lock = threading.Lock()
 
-CSV_PATH = "./DATA/resonance_step_velocity/boom_10in_trial1.csv"
+CSV_PATH = "./DATA/resonance_step_velocity/boom_2p0in_trial3.csv"
 
 wn = 12.763
 z = 0.0194
