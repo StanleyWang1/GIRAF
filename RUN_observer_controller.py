@@ -10,9 +10,9 @@ from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disco
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
 from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
 
-#CSV_PATH = "./DATA/resonance_step_velocity/boom_42p6in_trial1.csv"
-#CSV_PATH = "./DATA/resonance_step_velocity/boom_42p6in_trial2.csv"
-CSV_PATH = "./DATA/resonance_step_velocity/boom_42p6in_trial3.csv"
+CSV_PATH = "./DATA/resonance_step_velocity/boom_54p1in_trial1.csv"
+#CSV_PATH = "./DATA/resonance_step_velocity/boom_54p1in_trial2.csv"
+#CSV_PATH = "./DATA/resonance_step_velocity/boom_54p1in_trial3.csv"
 
 # Globals
 joystick_data = {"LX":0, "LY":0, "RX":0, "RY":0, "LT":0, "RT":0, "AB":0, "BB":0, "XB":0, "LB":0, "RB":0}

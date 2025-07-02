@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load CSV
-df = pd.read_csv("./DATA/resonance_step_velocity/boom_31p5in_trial2.csv")  # Replace with your actual file path
+df = pd.read_csv("./DATA/resonance_step_velocity/boom_42p6in_trial1.csv")  # Replace with your actual file path
 
 # Extract columns
 t = df['t']
