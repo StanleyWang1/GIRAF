@@ -13,12 +13,12 @@ zeta = 0.0194
 
 # Observer matrices (endpoint perpendicular dynamics)
 A = np.array([[0, 1], [-w_n**2, -2 * zeta * w_n]])
-beta = 10000.0
+beta = -L
 B = np.array([[0], [beta]])
 C = np.array([[-w_n**2, -2 * zeta * w_n]])
 D = np.array([[beta]])
 L_gain = np.array([[-0.01668588], [0.9887092]])
-Kd = 2 * zeta * w_n
+Kd = 10
 
 # Boom dynamics
 k_theta = M * L**2 * w_n**2
@@ -29,39 +29,25 @@ dt = 0.01
 # State
 theta = omega = alpha = theta_base = omega_base = 0.0
 x_hat = np.zeros((2, 1))  # [displacement; velocity] estimate
-damping_enabled = False
-noise_enabled = False
 
 # Teleop control
 input_velocity = 0.0
 lock = threading.Lock()
 
 def on_press(key):
-    global input_velocity, damping_enabled, noise_enabled
+    global input_velocity
     if key == keyboard.Key.up:
         with lock:
             input_velocity = 1.0
     elif key == keyboard.Key.down:
         with lock:
             input_velocity = -1.0
-    elif key.char == 'd':
-        with lock:
-            damping_enabled = not damping_enabled
-    elif key.char == 'n':
-        with lock:
-            noise_enabled = not noise_enabled
 
 def on_release(key):
-    global input_velocity, damping_enabled, noise_enabled
+    global input_velocity
     if key in (keyboard.Key.up, keyboard.Key.down):
         with lock:
             input_velocity = 0.0
-    elif key.char == 'd':
-        with lock:
-            damping_enabled = not damping_enabled
-    elif key.char == 'n':
-        with lock:
-            noise_enabled = not noise_enabled
 
 listener = keyboard.Listener(on_press=on_press, on_release=on_release)
 listener.daemon = True
@@ -75,30 +61,25 @@ time_elapsed = 0.0
 
 # --- Dynamics ---
 def update_dynamics():
-    global theta, omega, alpha, theta_base, omega_base, time_elapsed, x_hat, damping_enabled, noise_enabled
+    global theta, omega, alpha, theta_base, omega_base, time_elapsed, x_hat
 
     with lock:
-        damping = damping_enabled
-        noise = noise_enabled
         u_task = input_velocity
-    
-    u = u_task 
-    if damping:
-        u -= Kd * x_hat[1, 0]
 
-    omega_base = u
+    # Reference tracking for base (pure reference)
+    omega_base = u_task
     theta_base += omega_base * dt
 
-    tau = -k_theta * (theta - theta_base) - c_theta * (omega - omega_base)
+    # Control law for the plant (feedback)
+    u = u_task - Kd * x_hat[1, 0]
+
+    tau = -k_theta * (theta - theta_base) - c_theta * (omega - omega_base) + u
     alpha = tau / J
     omega += alpha * dt
     theta += omega * dt
 
     # IMU-like acceleration (perpendicular)
     a_perp = L * alpha
-    if noise:
-        a_perp += np.random.normal(0, 1)
-        
     y = np.array([[a_perp]])
     u_vec = np.array([[u]])
     dx_hat = A @ x_hat + B @ u_vec + L_gain @ (y - C @ x_hat - D @ u_vec)
@@ -109,6 +90,8 @@ def update_dynamics():
     accel_mags.append(a_perp)
 
     return theta, theta_base
+
+
 
 # --- Plotting ---
 fig, (ax_boom, ax_accel) = plt.subplots(1, 2, figsize=(10, 4))
