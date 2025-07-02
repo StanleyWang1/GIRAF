@@ -10,9 +10,6 @@ from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disco
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
 from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
 
-# Save Path
-CSV_PATH = "./DATA/resonance_step_velocity/boom_2p0in_trial1.csv"
-
 # Globals
 joystick_data = {"LX":0, "LY":0, "RX":0, "RY":0, "LT":0, "RT":0, "AB":0, "BB":0, "XB":0, "LB":0, "RB":0}
 joystick_lock = threading.Lock()
@@ -21,9 +18,11 @@ running_lock = threading.Lock()
 
 pitch_pos = 0.0
 x_hat = np.zeros((2, 1))
-latest_accel = (0.0, 0.0, 0.0)  # now storing x, y, z
+latest_accel = (0.0, 0.0, 0.0)  # Now storing x, y, z
 csv_buffer = []
 buffer_lock = threading.Lock()
+
+CSV_PATH = "./DATA/resonance_step_velocity/boom_2p0in_trial1.csv"
 
 wn = 12.763
 z = 0.0194
@@ -43,7 +42,7 @@ def joystick_monitor():
 def imu_setup():
     pipeline = dai.Pipeline()
     imu = pipeline.create(dai.node.IMU)
-    imu.enableIMUSensor(dai.IMUSensor.LINEAR_ACCELERATION, 400)
+    imu.enableIMUSensor(dai.IMUSensor.ACCELEROMETER, 500)
     imu.setBatchReportThreshold(1)
     imu.setMaxBatchReports(10)
     xout_imu = pipeline.create(dai.node.XLinkOut)
@@ -60,13 +59,13 @@ def imu_loop():
         imuData = queue.tryGet()
         if imuData:
             for pkt in imuData.packets:
-                lin_acc = pkt.linearAcc  # ✅ correct attribute
-                if lin_acc:
-                    with buffer_lock:
-                        latest_accel = (lin_acc.x, lin_acc.y, lin_acc.z)
+                if pkt.hasAccelerometer():
+                    acc = pkt.acceleroMeter
+                    if acc:
+                        with buffer_lock:
+                            latest_accel = (acc.x, acc.y, acc.z)
         time.sleep(0.001)
     device.close()
-
 
 def csv_logger():
     global csv_buffer, running
@@ -89,8 +88,10 @@ def observer_loop(candle, motors):
     D = np.array([[beta]])
     L = np.array([[-0.01668588], [0.9887092]])
 
+    # Observer damping term
     Kd = 2*z*wn / 4
-    dt = 1.0 / 400.0
+
+    dt = 1.0 / 500.0
     i = 0
 
     u_series = np.concatenate([
@@ -116,10 +117,10 @@ def observer_loop(candle, motors):
         pitch_pos += dt * u
         motor_drive(candle, motors, 0.0, pitch_pos, 0.0)
 
-        # y = ax  # only using x accel for observer
-        # y_hat = C @ x_hat + D * u
-        # x_hat_dot = A @ x_hat + B * u + L @ (y - y_hat)
-        # x_hat += x_hat_dot * dt
+        y = ax  # Use x-axis for observer
+        y_hat = C @ x_hat + D * u
+        x_hat_dot = A @ x_hat + B * u + L @ (y - y_hat)
+        x_hat += x_hat_dot * dt
 
         t_now = time.time() - t_start
         with buffer_lock:
