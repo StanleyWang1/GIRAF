@@ -42,7 +42,7 @@ def joystick_monitor():
 def imu_setup():
     pipeline = dai.Pipeline()
     imu = pipeline.create(dai.node.IMU)
-    imu.enableIMUSensor(dai.IMUSensor.ACCELEROMETER, 500)
+    imu.enableIMUSensor(dai.IMUSensor.ACCELEROMETER_RAW, 500)
     imu.setBatchReportThreshold(1)
     imu.setMaxBatchReports(10)
     xout_imu = pipeline.create(dai.node.XLinkOut)
@@ -59,11 +59,10 @@ def imu_loop():
         imuData = queue.tryGet()
         if imuData:
             for pkt in imuData.packets:
-                if pkt.hasAccelerometer():
-                    acc = pkt.acceleroMeter
-                    if acc:
-                        with buffer_lock:
-                            latest_accel = (acc.x, acc.y, acc.z)
+                acc = pkt.acceleroMeter
+                if acc:
+                    with buffer_lock:
+                        latest_accel = (acc.x, acc.y, acc.z)
         time.sleep(0.001)
     device.close()
 
@@ -177,3 +176,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
