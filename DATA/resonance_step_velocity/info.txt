@@ -1,3 +1,25 @@
 Boom raised to a height
 Velocity applied to pitch joint for 0.5 sec
 Resulting vibrations (X_accel) from this impulse recorded
+
+boom_2p0in_trial1.csv
+boom_2p0in_trial2.csv
+boom_2p0in_trial3.csv
+boom_11p25in_trial1.csv
+boom_11p25in_trial2.csv
+boom_11p25in_trial3.csv
+boom_21p3in_trial1.csv
+boom_21p3in_trial2.csv
+boom_21p3in_trial3.csv
+boom_31p5in_trial1.csv
+boom_31p5in_trial2.csv
+boom_31p5in_trial3.csv
+boom_42p6in_trial1.csv
+boom_42p6in_trial2.csv
+boom_42p6in_trial3.csv
+boom_54p1in_trial1.csv
+boom_54p1in_trial2.csv
+boom_54p1in_trial3.csv
+boom_65p7in_trial1.csv
+boom_65p7in_trial2.csv
+boom_65p7in_trial3.csv
