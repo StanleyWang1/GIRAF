@@ -18,7 +18,7 @@ running_lock = threading.Lock()
 
 pitch_pos = 0.0
 x_hat = np.zeros((2, 1))
-latest_accel = 0.0
+latest_accel = (0.0, 0.0, 0.0)  # now storing x, y, z
 csv_buffer = []
 buffer_lock = threading.Lock()
 
@@ -42,7 +42,7 @@ def joystick_monitor():
 def imu_setup():
     pipeline = dai.Pipeline()
     imu = pipeline.create(dai.node.IMU)
-    imu.enableIMUSensor(dai.IMUSensor.ACCELEROMETER_RAW, 500)
+    imu.enableIMUSensor(dai.IMUSensor.LINEAR_ACCELERATION, 400)
     imu.setBatchReportThreshold(1)
     imu.setMaxBatchReports(10)
     xout_imu = pipeline.create(dai.node.XLinkOut)
@@ -59,10 +59,10 @@ def imu_loop():
         imuData = queue.tryGet()
         if imuData:
             for pkt in imuData.packets:
-                acc = pkt.acceleroMeter
-                if acc:
+                lin_acc = pkt.linearAcceleration
+                if lin_acc:
                     with buffer_lock:
-                        latest_accel = acc.x # + 8.25
+                        latest_accel = (lin_acc.x, lin_acc.y, lin_acc.z)
         time.sleep(0.001)
     device.close()
 
@@ -70,7 +70,7 @@ def csv_logger():
     global csv_buffer, running
     os.makedirs(os.path.dirname(CSV_PATH), exist_ok=True)
     with open(CSV_PATH, 'w') as f:
-        f.write("t,accel_x,pitch_pos\n")#,x1_hat,x2_hat\n")
+        f.write("t,accel_x,accel_y,accel_z,pitch_pos\n")
         while running:
             time.sleep(0.5)
             with buffer_lock:
@@ -87,12 +87,8 @@ def observer_loop(candle, motors):
     D = np.array([[beta]])
     L = np.array([[-0.01668588], [0.9887092]])
 
-    # Observer damping term
     Kd = 2*z*wn / 4
-
-    # prev_time = time.time()
-    dt = 1.0 / 500.0
-    # duration = 11
+    dt = 1.0 / 400.0
     i = 0
 
     u_series = np.concatenate([
@@ -106,29 +102,26 @@ def observer_loop(candle, motors):
     while running:
         if i < len(u_series):
             u_task = u_series[i]
-            u = u_task # + Kd * x_hat[1, 0]
+            u = u_task
         else:
             u = 0
             with running_lock:
                 running = False
 
         with buffer_lock:
-            y = latest_accel
-
-        # curr_time = time.time()
-        # dt = curr_time - prev_time
-        # prev_time = curr_time
+            ax, ay, az = latest_accel
 
         pitch_pos += dt * u
         motor_drive(candle, motors, 0.0, pitch_pos, 0.0)
 
-        y_hat = C @ x_hat + D * u
-        x_hat_dot = A @ x_hat + B * u + L @ (y - y_hat)
-        x_hat += x_hat_dot * dt
+        # y = ax  # only using x accel for observer
+        # y_hat = C @ x_hat + D * u
+        # x_hat_dot = A @ x_hat + B * u + L @ (y - y_hat)
+        # x_hat += x_hat_dot * dt
 
         t_now = time.time() - t_start
         with buffer_lock:
-            csv_buffer.append((t_now, y, pitch_pos))#, x_hat[0,0], x_hat[1,0]))
+            csv_buffer.append((t_now, ax, ay, az, pitch_pos))
 
         i += 1
         time.sleep(dt)
