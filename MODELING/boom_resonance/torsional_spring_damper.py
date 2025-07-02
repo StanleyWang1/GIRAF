@@ -9,7 +9,8 @@ from collections import deque
 L = 1.5
 M = 0.5
 w_n = 12.753
-zeta = 0.0194
+# zeta = 0.0194
+zeta = 0.08
 
 k_theta = M * L**2 * w_n**2
 c_theta = 2 * zeta * M * L**2 * w_n

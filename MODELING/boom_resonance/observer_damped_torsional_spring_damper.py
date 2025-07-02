@@ -13,12 +13,12 @@ zeta = 0.0194
 
 # Observer matrices (endpoint perpendicular dynamics)
 A = np.array([[0, 1], [-w_n**2, -2 * zeta * w_n]])
-beta = -L
+beta = 10000.0
 B = np.array([[0], [beta]])
-C = np.array([[0, 1]])
+C = np.array([[-w_n**2, -2 * zeta * w_n]])
 D = np.array([[beta]])
 L_gain = np.array([[-0.01668588], [0.9887092]])
-Kd = 2 * zeta * w_n / 4
+Kd = 2 * zeta * w_n
 
 # Boom dynamics
 k_theta = M * L**2 * w_n**2
@@ -29,25 +29,39 @@ dt = 0.01
 # State
 theta = omega = alpha = theta_base = omega_base = 0.0
 x_hat = np.zeros((2, 1))  # [displacement; velocity] estimate
+damping_enabled = False
+noise_enabled = False
 
 # Teleop control
 input_velocity = 0.0
 lock = threading.Lock()
 
 def on_press(key):
-    global input_velocity
+    global input_velocity, damping_enabled, noise_enabled
     if key == keyboard.Key.up:
         with lock:
             input_velocity = 1.0
     elif key == keyboard.Key.down:
         with lock:
             input_velocity = -1.0
+    elif key.char == 'd':
+        with lock:
+            damping_enabled = not damping_enabled
+    elif key.char == 'n':
+        with lock:
+            noise_enabled = not noise_enabled
 
 def on_release(key):
-    global input_velocity
+    global input_velocity, damping_enabled, noise_enabled
     if key in (keyboard.Key.up, keyboard.Key.down):
         with lock:
             input_velocity = 0.0
+    elif key.char == 'd':
+        with lock:
+            damping_enabled = not damping_enabled
+    elif key.char == 'n':
+        with lock:
+            noise_enabled = not noise_enabled
 
 listener = keyboard.Listener(on_press=on_press, on_release=on_release)
 listener.daemon = True
@@ -61,11 +75,17 @@ time_elapsed = 0.0
 
 # --- Dynamics ---
 def update_dynamics():
-    global theta, omega, alpha, theta_base, omega_base, time_elapsed, x_hat
+    global theta, omega, alpha, theta_base, omega_base, time_elapsed, x_hat, damping_enabled, noise_enabled
 
     with lock:
+        damping = damping_enabled
+        noise = noise_enabled
         u_task = input_velocity
-    u = u_task - Kd * x_hat[1, 0]
+    
+    u = u_task 
+    if damping:
+        u -= Kd * x_hat[1, 0]
+
     omega_base = u
     theta_base += omega_base * dt
 
@@ -76,6 +96,9 @@ def update_dynamics():
 
     # IMU-like acceleration (perpendicular)
     a_perp = L * alpha
+    if noise:
+        a_perp += np.random.normal(0, 1)
+        
     y = np.array([[a_perp]])
     u_vec = np.array([[u]])
     dx_hat = A @ x_hat + B @ u_vec + L_gain @ (y - C @ x_hat - D @ u_vec)
