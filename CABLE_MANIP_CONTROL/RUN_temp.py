@@ -11,7 +11,8 @@ from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
 from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
 from kinematic_model import num_jacobian, num_forward_kinematics
 
-from new_cable_traj import trajectory
+from square_traj import trajectory
+# from new_cable_traj import trajectory
 # from square_test import trajectory
 
 ## ----------------------------------------------------------------------------------------------------
@@ -144,32 +145,16 @@ def motor_control():
                         waypoint_id += 1
                     else:
                         x, y, z = trajectory[-1]
+                        waypoint_id = 0
 
-                    T_tag_target = np.array([[1, 0, 0, x],
-                                            [0, 1, 0, y],
-                                            [0, 0, 1, z],
-                                            [0, 0, 0, 1]])
-                    
-                    # Update tag pose if available
-                    with T_world_tag_lock:
-                        T_world_tag_temp = T_world_tag
-                    if T_world_tag_temp is not None: # valid tag being read
-                        tag_read = True # tag has been seen
-                        T_world_tag_latest = T_world_tag_temp # save latest tag pose
-                    
-                    # If tag pose available, plan trajectory:
-                    if tag_read:
-                        T_world_target = T_world_tag_latest @ T_tag_target
-                        target_pose = T_world_target[:3, 3]
-
-                        with FK_num_lock:
-                            EE_pose = FK_num[:3, 3]
-                        P_velocity = 5 * (target_pose - EE_pose) # move towards target pose
-                        P_velocity = np.clip(P_velocity, -0.5, 0.5) # set velocity limits
-                        with velocity_lock:
-                            velocity[0] = P_velocity[0] # X velocity
-                            velocity[1] = P_velocity[1] # Y velocity
-                            velocity[2] = P_velocity[2] # Z velocity
+                    with FK_num_lock:
+                        EE_pose = FK_num[:3, 3]
+                    P_velocity = 5*np.array([x, y, z]) - EE_pose
+                    P_velocity = np.clip(P_velocity, -0.5, 0.5)
+                    with velocity_lock:
+                        velocity[0] = P_velocity[0] # X velocity
+                        velocity[1] = P_velocity[1] # Y velocity
+                        velocity[2] = P_velocity[2] # Z velocity
 
                 elif LY or LX or RY or RX or LT or RT or AB or BB: # manual control  
                     tag_read = False
