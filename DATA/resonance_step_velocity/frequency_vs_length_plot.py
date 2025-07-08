@@ -11,8 +11,8 @@ y_sine = df["Sine Fit Freq (Hz)"].values
 y_fft = df["FFT Peak Freq (Hz)"].values
 
 # Define model functions
-def inv(x, a, b):        # y = a / x
-    return a / x + b / x**2
+def inv(x, a, b, c):        # y = a / x
+    return a / x + c
 
 def inv_sq(x, b, d):     # y = b / x^2
     return b / x**2 + d

@@ -6,6 +6,7 @@ from control_table import *
 from dynamixel_controller import DynamixelController
 
 # Motor IDs
+BOOM_ENCODER = 10
 JOINT1 = 11
 JOINT2 = 12
 JOINT3 = 13
@@ -16,7 +17,8 @@ def dynamixel_connect():
     controller = DynamixelController('/dev/ttyUSB0', 57600, 2.0)
     group_sync_write = GroupSyncWrite(controller.port_handler, controller.packet_handler, GOAL_POSITION[0], GOAL_POSITION[1])
 
-    # Reboot all motors to ensure clean startup
+    # --------------------------------------------------
+    # Reboot WRIST motors to ensure clean startup
     for motor_id in [JOINT1, JOINT2, JOINT3, GRIPPER]:
         dxl_comm_result, dxl_error = controller.packet_handler.reboot(controller.port_handler, motor_id)
         if dxl_comm_result != COMM_SUCCESS:
@@ -29,6 +31,20 @@ def dynamixel_connect():
     # Give motors time to reboot
     time.sleep(2)
 
+    # --------------------------------------------------
+    # Setup BOOM_ENCODER motor (read-only, passive mode)
+    dxl_comm_result, dxl_error = controller.packet_handler.reboot(controller.port_handler, BOOM_ENCODER)
+    if dxl_comm_result != COMM_SUCCESS:
+        print(f"Failed to reboot Boom Encoder (Motor {BOOM_ENCODER}): {controller.packet_handler.getTxRxResult(dxl_comm_result)}")
+    elif dxl_error != 0:
+        print(f"Error rebooting Boom Encoder (Motor {BOOM_ENCODER}): {controller.packet_handler.getRxPacketError(dxl_error)}")
+    else:
+        print(f"Boom Encoder (Motor {BOOM_ENCODER}) rebooted successfully.")
+
+    time.sleep(1)  # Allow reboot
+    controller.WRITE(BOOM_ENCODER, OPERATING_MODE, 4)  # Extended position
+    controller.WRITE(BOOM_ENCODER, TORQUE_ENABLE, 0)   # Ensure motor is torque-off (read-only)
+    
     # Set Control Mode
     controller.WRITE(JOINT1, OPERATING_MODE, 4)  # extended position control
     controller.WRITE(JOINT2, OPERATING_MODE, 4)
@@ -63,6 +79,26 @@ def dynamixel_drive(controller, group_sync_write, ticks):
 
     group_sync_write.clearParam()
     return True
+
+def dynamixel_boom_ticks(controller):
+    """Reads the current position (ticks) of the passive boom encoder motor (ID 10)."""
+    motor10_pos = controller.READ(BOOM_ENCODER, PRESENT_POSITION)
+    if motor10_pos is False:  # your READ() returns False on failure
+        print("Failed to read boom encoder position.")
+        return None
+    return motor10_pos
+
+def dynamixel_boom_meters(controller, homing_offset = 0):
+    """Calculate the current position (m) of the boom"""
+    # Encoder ticks to boom length [m]
+    slope = -4.21212481e-05 # boom length per tick
+    # y_intercept = 5.32822431e-02  # boom length at 0 ticks
+    y_intercept = 0.381
+    # Get encoder ticks
+    motor10_pos = dynamixel_boom_ticks(controller)
+    # Convert to boom position
+    boom_pos = slope * (motor10_pos - homing_offset) + y_intercept # [m]
+    return boom_pos
 
 def dynamixel_disconnect(controller):
     # Torque OFF all motors individually (simple)

@@ -6,7 +6,7 @@ import cv2
 
 from camera_driver import run_camera_server
 from control_table import MOTOR11_HOME, MOTOR12_HOME, MOTOR13_HOME, MOTOR14_OPEN, MOTOR14_CLOSED
-from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disconnect, radians_to_ticks
+from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_boom_ticks, dynamixel_boom_meters, dynamixel_disconnect, radians_to_ticks
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
 from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
 from kinematic_model import num_jacobian, num_forward_kinematics
@@ -90,8 +90,8 @@ def motor_control():
     # Joint Coords            
     roll_pos = 0
     pitch_pos = 0
-    d3_pos = (55+255+80)/1000
-    boom_pos = 0
+    d3_pos = 0 # [m]
+    boom_pos = 0 # [rad]
     theta4_pos = 0
     theta5_pos = 0
     theta6_pos = 0
@@ -102,6 +102,8 @@ def motor_control():
 
     candle, motors = motor_connect()
     dmx_controller, dmx_GSW = dynamixel_connect()
+    homing_offset = dynamixel_boom_ticks(dmx_controller)
+    d3_pos = dynamixel_boom_meters(dmx_controller, homing_offset)
     print("\033[93mTELEOP: Motors Connected!\033[0m")
 
     tag_read = False
@@ -162,7 +164,7 @@ def motor_control():
 
                         with FK_num_lock:
                             EE_pose = FK_num[:3, 3]
-                        P_velocity = 2 * (target_pose - EE_pose) # move towards target pose
+                        P_velocity = 5 * (target_pose - EE_pose) # move towards target pose
                         P_velocity = np.clip(P_velocity, -0.5, 0.5) # set velocity limits
                         with velocity_lock:
                             velocity[0] = P_velocity[0] # X velocity
@@ -182,10 +184,10 @@ def motor_control():
 
                     if RT and not LT: # Z up
                         with velocity_lock:
-                            velocity[2] = 0.1*RT # Z velocity up
+                            velocity[2] = 0.25*RT # Z velocity up
                     elif LT and not RT and (pitch_pos > 0): # Z down
                         with velocity_lock:
-                            velocity[2] = -0.1*LT # Z velocity down
+                            velocity[2] = -0.25*LT # Z velocity down
                     else:
                         with velocity_lock:
                             velocity[2] = 0 # no Z velocity
@@ -205,6 +207,7 @@ def motor_control():
                     velocity = np.zeros((6, 1))
                     gripper_velocity = 0
 
+            d3_pos = dynamixel_boom_meters(dmx_controller, homing_offset)
             Jv_inv = inverse_jacobian([roll_pos, pitch_pos + np.pi/2, d3_pos, 
                                        theta4_pos + np.pi/2, theta5_pos + 5*np.pi/6, theta6_pos])
             with FK_num_lock:
@@ -213,16 +216,16 @@ def motor_control():
             
             joint_velocity = Jv_inv @ velocity
 
-            roll_pos = roll_pos + 0.0075*joint_velocity[0, 0]
-            pitch_pos = pitch_pos + 0.0075*joint_velocity[1, 0]
-            d3_pos = d3_pos + 0.0075*joint_velocity[2, 0]
-
-            boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
+            roll_pos = roll_pos + 0.005*joint_velocity[0, 0]
+            pitch_pos = pitch_pos + 0.005*joint_velocity[1, 0]
+            # d3_pos = d3_pos + 0.0075*joint_velocity[2, 0]
+            # boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
             # print(boom_pos)
+            boom_pos = boom_pos + 17.39*0.005*joint_velocity[2, 0]
 
-            theta4_pos = theta4_pos + 0.0075*joint_velocity[3, 0]
-            theta5_pos = theta5_pos + 0.0075*joint_velocity[4, 0]
-            theta6_pos = theta6_pos + 0.0075*joint_velocity[5, 0]
+            theta4_pos = theta4_pos + 0.005*joint_velocity[3, 0]
+            theta5_pos = theta5_pos + 0.005*joint_velocity[4, 0]
+            theta6_pos = theta6_pos + 0.005*joint_velocity[5, 0]
             
             theta5_pos = max(theta5_pos, -1.7) # wrist pitch limit
 
