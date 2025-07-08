@@ -209,7 +209,7 @@ def motor_control():
 
             d3_pos = dynamixel_boom_meters(dmx_controller, homing_offset)
             print(dynamixel_boom_ticks(dmx_controller))
-            
+
             Jv_inv = inverse_jacobian([roll_pos, pitch_pos + np.pi/2, d3_pos, 
                                        theta4_pos + np.pi/2, theta5_pos + 5*np.pi/6, theta6_pos])
             with FK_num_lock:
@@ -223,7 +223,7 @@ def motor_control():
             # d3_pos = d3_pos + 0.0075*joint_velocity[2, 0]
             # boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
             # print(boom_pos)
-            boom_pos = boom_pos - 17.39*0.005*joint_velocity[2, 0]
+            boom_pos = boom_pos - 30.0*0.005*joint_velocity[2, 0]
 
             theta4_pos = theta4_pos + 0.005*joint_velocity[3, 0]
             theta5_pos = theta5_pos + 0.005*joint_velocity[4, 0]
