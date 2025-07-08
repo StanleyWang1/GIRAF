@@ -247,9 +247,9 @@ def motor_control():
                                                       radians_to_ticks(theta5_pos) + MOTOR12_HOME,
                                                       radians_to_ticks(theta6_pos) + MOTOR13_HOME,
                                                       gripper_pos])
-            # time.sleep(0.005)
-            loop_end = time.time()    # <--- END TIMESTAMP
-            print(f"[motor_control] Loop time: {(loop_end - loop_start)*1000:.2f} ms")
+            #time.sleep(0.005)
+            #loop_end = time.time()    # <--- END TIMESTAMP
+            #print(f"[motor_control] Loop time: {(loop_end - loop_start)*1000:.2f} ms")
     
     finally:
         motor_disconnect(candle)
