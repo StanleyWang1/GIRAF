@@ -81,11 +81,15 @@ def dynamixel_drive(controller, group_sync_write, ticks):
     return True
 
 def dynamixel_boom_ticks(controller):
-    """Reads the current position (ticks) of the passive boom encoder motor (ID 10)."""
+    """Reads the current position (ticks) of the passive boom encoder motor (ID 10),
+    and converts it to a signed 32-bit integer if necessary."""
     motor10_pos = controller.READ(BOOM_ENCODER, PRESENT_POSITION)
-    if motor10_pos is False:  # your READ() returns False on failure
+    if motor10_pos is False:
         print("Failed to read boom encoder position.")
         return None
+    # Convert from unsigned to signed 32-bit integer
+    if motor10_pos >= 2**31:
+        motor10_pos -= 2**32
     return motor10_pos
 
 def dynamixel_boom_meters(controller, homing_offset = 0):
