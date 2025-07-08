@@ -192,7 +192,7 @@ def motor_control():
                     velocity = np.zeros((6, 1))
                     gripper_velocity = 0
 
-            # d3_pos = dynamixel_boom_meters(dmx_controller, homing_offset)
+            trash = dynamixel_boom_meters(dmx_controller)
             # print(dynamixel_boom_ticks(dmx_controller))
 
             Jv_inv = inverse_jacobian([roll_pos, pitch_pos + np.pi/2, d3_pos, 
