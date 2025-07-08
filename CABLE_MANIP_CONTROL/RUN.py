@@ -223,7 +223,7 @@ def motor_control():
             # d3_pos = d3_pos + 0.0075*joint_velocity[2, 0]
             # boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
             # print(boom_pos)
-            boom_pos = boom_pos - 30.0*0.005*joint_velocity[2, 0]
+            boom_pos = boom_pos - 100.0*0.005*joint_velocity[2, 0]
 
             theta4_pos = theta4_pos + 0.005*joint_velocity[3, 0]
             theta5_pos = theta5_pos + 0.005*joint_velocity[4, 0]
