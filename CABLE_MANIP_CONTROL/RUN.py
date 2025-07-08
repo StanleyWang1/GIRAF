@@ -176,18 +176,18 @@ def motor_control():
                     waypoint_id = 0
 
                     with velocity_lock:
-                        velocity[0] = -0.25*LY # X velocity
-                        velocity[1] = -0.25*LX # Y velocity
+                        velocity[0] = -0.5*LY # X velocity
+                        velocity[1] = -0.5*LX # Y velocity
 
-                        velocity[4] = 0.5*RY # WY angular velocity
-                        velocity[5] = -0.5*RX # WZ angular velocity
+                        velocity[4] = 1.0*RY # WY angular velocity
+                        velocity[5] = -1.0*RX # WZ angular velocity
 
                     if RT and not LT: # Z up
                         with velocity_lock:
-                            velocity[2] = 0.25*RT # Z velocity up
+                            velocity[2] = 0.5*RT # Z velocity up
                     elif LT and not RT and (pitch_pos > 0): # Z down
                         with velocity_lock:
-                            velocity[2] = -0.25*LT # Z velocity down
+                            velocity[2] = -0.5*LT # Z velocity down
                     else:
                         with velocity_lock:
                             velocity[2] = 0 # no Z velocity
@@ -246,7 +246,7 @@ def motor_control():
                                                       radians_to_ticks(theta5_pos) + MOTOR12_HOME,
                                                       radians_to_ticks(theta6_pos) + MOTOR13_HOME,
                                                       gripper_pos])
-            time.sleep(0.0025)
+            time.sleep(0.005)
     finally:
         motor_disconnect(candle)
         dynamixel_disconnect(dmx_controller)
