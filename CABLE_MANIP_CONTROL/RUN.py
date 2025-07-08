@@ -144,7 +144,7 @@ def motor_control():
                     else:
                         x, y, z = trajectory[-1]
                         waypoint_id = 0 # loop back to start
-                        
+
                     T_tag_target = np.array([[1, 0, 0, x],
                                             [0, 1, 0, y],
                                             [0, 0, 1, z],
@@ -164,7 +164,7 @@ def motor_control():
 
                         with FK_num_lock:
                             EE_pose = FK_num[:3, 3]
-                        P_velocity = 2 * (target_pose - EE_pose) # move towards target pose
+                        P_velocity = 5 * (target_pose - EE_pose) # move towards target pose
                         P_velocity = np.clip(P_velocity, -0.5, 0.5) # set velocity limits
                         with velocity_lock:
                             velocity[0] = P_velocity[0] # X velocity
