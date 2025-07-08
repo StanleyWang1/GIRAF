@@ -11,8 +11,8 @@ from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
 from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
 from kinematic_model import num_jacobian, num_forward_kinematics
 
-from new_cable_traj import trajectory
-# from square_traj import trajectory
+# from new_cable_traj import trajectory
+from square_traj import trajectory
 # from square_test import trajectory
 
 ## ----------------------------------------------------------------------------------------------------
