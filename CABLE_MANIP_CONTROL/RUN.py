@@ -113,6 +113,7 @@ def motor_control():
     
     try:
         while running:
+            loop_start = time.time()
             # unpack joystick data from dict
             with joystick_lock:
                 LX = joystick_data["LX"]
@@ -208,7 +209,7 @@ def motor_control():
                     gripper_velocity = 0
 
             d3_pos = dynamixel_boom_meters(dmx_controller, homing_offset)
-            print(dynamixel_boom_ticks(dmx_controller))
+            # print(dynamixel_boom_ticks(dmx_controller))
 
             Jv_inv = inverse_jacobian([roll_pos, pitch_pos + np.pi/2, d3_pos, 
                                        theta4_pos + np.pi/2, theta5_pos + 5*np.pi/6, theta6_pos])
@@ -247,6 +248,9 @@ def motor_control():
                                                       radians_to_ticks(theta6_pos) + MOTOR13_HOME,
                                                       gripper_pos])
             time.sleep(0.005)
+            loop_end = time.time()    # <--- END TIMESTAMP
+            print(f"[motor_control] Loop time: {(loop_end - loop_start)*1000:.2f} ms")
+    
     finally:
         motor_disconnect(candle)
         dynamixel_disconnect(dmx_controller)
