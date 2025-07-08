@@ -149,7 +149,7 @@ def motor_control():
 
                     with FK_num_lock:
                         EE_pose = FK_num[:3, 3]
-                    P_velocity = 5*np.array([x, y, z]) - EE_pose
+                    P_velocity = 5*(np.array([x, y, z]) - EE_pose)
                     P_velocity = np.clip(P_velocity, -0.5, 0.5)
                     with velocity_lock:
                         velocity[0] = P_velocity[0] # X velocity
