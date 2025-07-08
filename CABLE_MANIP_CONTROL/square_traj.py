@@ -5,8 +5,8 @@ def generate_square_xy_trajectory():
 
     # Define square corners in clockwise or counterclockwise order
     p1 = np.array([-0.2,  -0.05, z])
-    p2 = np.array([-0.15,  -0.05, z])
-    p3 = np.array([-0.15,   0.05, z])
+    p2 = np.array([-0.1,  -0.05, z])
+    p3 = np.array([-0.1,   0.05, z])
     p4 = np.array([-0.2,   0.05, z])
     # z = 0.25  # Constant height
 
