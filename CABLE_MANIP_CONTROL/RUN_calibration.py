@@ -131,7 +131,7 @@ def motor_control():
             if LB and RB:
                 if YB:
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-                    get_frame(f"./CAMERA/CALIBRATION/{timestamp}.png") # save snapshot
+                    get_frame(f"../CAMERA/CALIBRATION/{timestamp}.png") # save snapshot
                     time.sleep(0.3) # debounce
                     print(f"Saved snapshot at ./CAMERA/CALIBRATION/{timestamp}.png")
                 elif LY or LX or RY or RX or LT or RT or AB or BB: # manual control  
