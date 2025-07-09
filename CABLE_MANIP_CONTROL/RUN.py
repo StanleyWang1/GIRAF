@@ -133,10 +133,42 @@ def motor_control():
                 break
 
             # safety interlock
-            if LB and RB:
+            if (LB and RB) or autonomous_mode:
                 if YB:
+                    autonomous_mode = True
+                    cycle_count = 0
                     # Y BUTTON -- enter autonomous mode!
 
+                elif LY or LX or RY or RX or LT or RT or AB or BB: # manual control  
+                    tag_read = False
+                    autonomous_mode = False
+                    waypoint_id = 0
+
+                    with velocity_lock:
+                        velocity[0] = -0.25*LY # X velocity
+                        velocity[1] = -0.25*LX # Y velocity
+
+                        velocity[4] = 0.5*RY # WY angular velocity
+                        velocity[5] = -0.5*RX # WZ angular velocity
+
+                    if RT and not LT: # Z up
+                        with velocity_lock:
+                            velocity[2] = 0.1*RT # Z velocity up
+                    elif LT and not RT and (pitch_pos > 0): # Z down
+                        with velocity_lock:
+                            velocity[2] = -0.1*LT # Z velocity down
+                    else:
+                        with velocity_lock:
+                            velocity[2] = 0 # no Z velocity
+
+                    if AB and not BB: # close
+                        gripper_velocity = 20
+                    elif BB and not AB:
+                        gripper_velocity = -20
+                    else:
+                        gripper_velocity = 0
+
+                elif autonomous_mode:
                     # Get x,y,z point from loaded trajectory
                     if waypoint_id < len(trajectory):
                         x, y, z = trajectory[waypoint_id]
@@ -144,6 +176,13 @@ def motor_control():
                     else:
                         x, y, z = trajectory[-1]
                         waypoint_id = 0 # loop back to start
+                        cycle_count += 1
+                        if cycle_count >= 20:
+                            autonomous_mode = False
+                            with velocity_lock:
+                                velocity = np.zeros((6, 1))
+                                gripper_velocity = 0
+                        print(f"\033[93mTELEOP: Completed {cycle_count} cycles!\033[0m")
 
                     T_tag_target = np.array([[1, 0, 0, x],
                                             [0, 1, 0, y],
@@ -171,33 +210,6 @@ def motor_control():
                             velocity[1] = P_velocity[1] # Y velocity
                             velocity[2] = P_velocity[2] # Z velocity
 
-                elif LY or LX or RY or RX or LT or RT or AB or BB: # manual control  
-                    tag_read = False
-                    waypoint_id = 0
-
-                    with velocity_lock:
-                        velocity[0] = -0.25*LY # X velocity
-                        velocity[1] = -0.25*LX # Y velocity
-
-                        velocity[4] = 0.5*RY # WY angular velocity
-                        velocity[5] = -0.5*RX # WZ angular velocity
-
-                    if RT and not LT: # Z up
-                        with velocity_lock:
-                            velocity[2] = 0.1*RT # Z velocity up
-                    elif LT and not RT and (pitch_pos > 0): # Z down
-                        with velocity_lock:
-                            velocity[2] = -0.1*LT # Z velocity down
-                    else:
-                        with velocity_lock:
-                            velocity[2] = 0 # no Z velocity
-
-                    if AB and not BB: # close
-                        gripper_velocity = 20
-                    elif BB and not AB:
-                        gripper_velocity = -20
-                    else:
-                        gripper_velocity = 0
                 else:
                     with velocity_lock:
                         velocity = np.zeros((6, 1))
