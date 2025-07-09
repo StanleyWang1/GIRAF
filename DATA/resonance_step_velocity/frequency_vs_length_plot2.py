@@ -11,7 +11,7 @@ y_fft = df["FFT Peak Freq (Hz)"].values
 
 # Define model: y = a/x + c
 def inv(x, a, b, c):
-    return a / x**2 + b / x + c
+    return a / x**4 + b / x + c
 
 # Fit model
 params, _ = curve_fit(inv, x, y_fft)
