@@ -106,6 +106,7 @@ def motor_control():
     print("\033[93mTELEOP: Motors Connected!\033[0m")
 
     tag_read = False
+    autonomous_mode = False
     waypoint_id = 0
     T_world_tag_temp = np.zeros((4, 4))
     T_world_tag_latest = np.zeros((4, 4))
