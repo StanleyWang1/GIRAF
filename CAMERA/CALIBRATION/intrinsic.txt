@@ -3,6 +3,11 @@ Intrinsic Loaded from Oak-D Camera:
  [  0.         511.0249939  248.81518555]
  [  0.           0.           1.        ]]
 
+Camera Intrinsic from MATLAB:
+[[704.584, 0.0, 325.885]
+[0.0, 704.761, 245.785]
+[0.0, 0.0, 1.0]]
+
 Camera Intrinsic Matrix (K):
 [[6529, 0, 284]
 [0, 2600, 209]
