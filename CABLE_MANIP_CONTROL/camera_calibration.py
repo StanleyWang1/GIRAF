@@ -89,3 +89,21 @@ def run_camera_server(params=None):
         finally:
             conn.close()
             server_socket.close()
+
+# --- MAIN: Print Intrinsics ---
+def main():
+    print("[camera_driver] Reading intrinsics...")
+    pipeline = dai.Pipeline()
+    cam = pipeline.create(dai.node.ColorCamera)
+    cam.setPreviewSize(640, 480)
+    cam.setInterleaved(False)
+    cam.setColorOrder(dai.ColorCameraProperties.ColorOrder.RGB)
+    cam.setFps(30)
+
+    with dai.Device(pipeline) as device:
+        K = get_camera_intrinsics(device)
+        print("Intrinsic Matrix (K):")
+        print(K)
+
+if __name__ == "__main__":
+    main()
