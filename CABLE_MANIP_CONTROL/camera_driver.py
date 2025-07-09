@@ -7,8 +7,8 @@ import time
 def get_camera_intrinsics(device):
     calib = device.readCalibration()
     # intrinsics = np.array(calib.getCameraIntrinsics(dai.CameraBoardSocket.RGB, 640, 480))
-    intrinsics = np.array([[704.584, 0.0,     325.885]
-                            [0.0,    704.761, 245.785]
+    intrinsics = np.array([[704.584, 0.0,     325.885],
+                            [0.0,    704.761, 245.785],
                             [0.0,    0.0,     1.0]])
     return intrinsics
 
