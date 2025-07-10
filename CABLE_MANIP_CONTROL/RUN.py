@@ -136,6 +136,7 @@ def motor_control():
             # safety interlock
             if (LB and RB) or autonomous_mode:
                 if YB:
+                    speed = input("Enter speed multiplier (1, 2, 4x): ")
                     autonomous_mode = True
                     cycle_count = 0
                     # Y BUTTON -- enter autonomous mode!
@@ -173,7 +174,7 @@ def motor_control():
                     # Get x,y,z point from loaded trajectory
                     if waypoint_id < len(trajectory):
                         x, y, z = trajectory[waypoint_id]
-                        waypoint_id += 1
+                        waypoint_id += speed
                     else:
                         x, y, z = trajectory[-1]
                         waypoint_id = 0 # loop back to start

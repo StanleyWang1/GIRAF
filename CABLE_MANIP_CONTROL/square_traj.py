@@ -17,10 +17,10 @@ def generate_square_xy_trajectory():
     # p4 = np.array([0.5,   0.25, z])
 
     # Create linear segments
-    traj1 = np.linspace(p1, p2, 300)
-    traj2 = np.linspace(p2, p3, 300)
-    traj3 = np.linspace(p3, p4, 300)
-    traj4 = np.linspace(p4, p1, 300)
+    traj1 = np.linspace(p1, p2, 600)
+    traj2 = np.linspace(p2, p3, 600)
+    traj3 = np.linspace(p3, p4, 600)
+    traj4 = np.linspace(p4, p1, 600)
 
     # Combine all into one trajectory
     trajectory = np.vstack([traj1, traj2, traj3, traj4])
