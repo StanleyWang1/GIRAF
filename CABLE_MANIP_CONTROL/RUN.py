@@ -4,8 +4,8 @@ import queue
 import time
 import cv2
 
-from charuco_detect import run_camera_server
-# from camera_driver import run_camera_server
+# from charuco_detect import run_camera_server
+from camera_driver import run_camera_server
 from control_table import MOTOR11_HOME, MOTOR12_HOME, MOTOR13_HOME, MOTOR14_OPEN, MOTOR14_CLOSED
 from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disconnect, radians_to_ticks
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
