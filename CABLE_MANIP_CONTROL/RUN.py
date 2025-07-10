@@ -136,7 +136,7 @@ def motor_control():
             # safety interlock
             if (LB and RB) or autonomous_mode:
                 if YB:
-                    speed = input("Enter speed multiplier (1, 2, 4x): ")
+                    speed = int(input("Enter speed multiplier (1, 2, 4x): "))
                     autonomous_mode = True
                     cycle_count = 0
                     # Y BUTTON -- enter autonomous mode!
