@@ -1,0 +1,110 @@
+import socket, struct, cv2, depthai as dai
+import numpy as np
+import queue
+import time
+
+# Create Charuco board
+charuco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
+charuco_board = cv2.aruco.CharucoBoard_create(
+    squaresX=5, squaresY=4,
+    squareLength=0.050, markerLength=0.0375,
+    dictionary=charuco_dict
+)
+charuco_detector = cv2.aruco.CharucoDetector(charuco_board)
+
+def get_camera_intrinsics(device):
+    return np.array([[704.584, 0.0,     325.885],
+                     [0.0,    704.761, 245.785],
+                     [0.0,    0.0,     1.0]])
+
+def draw_pose(frame, rvec, tvec):
+    text = f"T: {tvec.ravel()}\nR: {rvec.ravel()}"
+    for i, line in enumerate(text.split('\n')):
+        cv2.putText(frame, line, (10, 30 + i*30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
+def draw_fps(frame, fps):
+    text = f"FPS: {fps:.1f}"
+    size, _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)
+    cv2.putText(frame, text, (frame.shape[1] - size[0] - 10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+
+def run_camera_server(params=None, output_queue=None):
+    if params is None:
+        params = {}
+    HOST = params.get("host", "0.0.0.0")
+    PORT = params.get("port", 8485)
+
+    if output_queue is not None and output_queue.maxsize != 1:
+        raise ValueError("output_queue must have maxsize=1.")
+
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind((HOST, PORT))
+    server_socket.listen(1)
+    print(f"[camera_driver] Server listening on {HOST}:{PORT}")
+
+    conn, addr = server_socket.accept()
+    print(f"[camera_driver] Client connected from {addr}")
+
+    pipeline = dai.Pipeline()
+    cam = pipeline.create(dai.node.ColorCamera)
+    cam.setPreviewSize(640, 480)
+    cam.setInterleaved(False)
+    cam.setColorOrder(dai.ColorCameraProperties.ColorOrder.RGB)
+    cam.setFps(30)
+
+    xout = pipeline.create(dai.node.XLinkOut)
+    xout.setStreamName("rgb")
+    cam.preview.link(xout.input)
+
+    with dai.Device(pipeline) as device:
+        intrinsics = get_camera_intrinsics(device)
+        rgb_queue = device.getOutputQueue(name="rgb", maxSize=1, blocking=True)
+
+        fps = 0.0
+        prev_time = time.time()
+
+        try:
+            while True:
+                in_rgb = rgb_queue.get()
+                frame = in_rgb.getCvFrame()
+                gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+
+                # Update FPS
+                now = time.time()
+                fps = 0.9 * fps + 0.1 * (1 / (now - prev_time))
+                prev_time = now
+                draw_fps(frame, fps)
+
+                corners, ids, _ = cv2.aruco.detectMarkers(gray, charuco_dict)
+                if ids is not None and len(ids) > 3:
+                    cv2.aruco.drawDetectedMarkers(frame, corners, ids)
+                    ret, charuco_corners, charuco_ids = charuco_detector.detectBoard(gray, corners, ids)
+                    if ret:
+                        success, rvec, tvec = cv2.aruco.estimatePoseCharucoBoard(
+                            charuco_corners, charuco_ids, charuco_board, intrinsics, None)
+                        if success:
+                            cv2.drawFrameAxes(frame, intrinsics, None, rvec, tvec, 0.05)
+                            draw_pose(frame, rvec, tvec)
+                            if output_queue and not output_queue.full():
+                                output_queue.put_nowait({
+                                    "id": "charuco",
+                                    "rvec": rvec.ravel().tolist(),
+                                    "tvec": tvec.ravel().tolist()
+                                })
+                        else:
+                            if output_queue and not output_queue.full():
+                                output_queue.put_nowait({"id": None})
+                else:
+                    if output_queue and not output_queue.full():
+                        output_queue.put_nowait({"id": None})
+
+                _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+                conn.sendall(struct.pack(">L", len(jpeg)) + jpeg)
+
+        except Exception as e:
+            print(f"[camera_driver] Error: {e}")
+        finally:
+            conn.close()
+            server_socket.close()
