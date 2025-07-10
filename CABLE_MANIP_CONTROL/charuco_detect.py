@@ -86,9 +86,11 @@ def run_camera_server(params=None, output_queue=None):
                         tvec = tvecs[i]
 
                         cv2.drawFrameAxes(frame, intrinsics, None, rvec, tvec, 0.05)
+                        corner_pt = np.array(corners[i][0][0], dtype=np.int32)
                         cv2.putText(frame, f"ID: {marker_id}",
-                                    tuple(corners[i][0][0].astype(int) + np.array([5, -5])),
+                                    tuple(corner_pt + np.array([5, -5])),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+
                         draw_pose(frame, rvec, tvec)
 
                         if output_queue is not None:
