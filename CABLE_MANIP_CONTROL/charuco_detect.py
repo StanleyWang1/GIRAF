@@ -3,15 +3,6 @@ import numpy as np
 import queue
 import time
 
-# Create Charuco board
-charuco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
-charuco_board = cv2.aruco.CharucoBoard_create(
-    squaresX=5, squaresY=4,
-    squareLength=0.050, markerLength=0.0375,
-    dictionary=charuco_dict
-)
-charuco_detector = cv2.aruco.CharucoDetector(charuco_board)
-
 def get_camera_intrinsics(device):
     return np.array([[704.584, 0.0,     325.885],
                      [0.0,    704.761, 245.785],
@@ -21,7 +12,7 @@ def draw_pose(frame, rvec, tvec):
     text = f"T: {tvec.ravel()}\nR: {rvec.ravel()}"
     for i, line in enumerate(text.split('\n')):
         cv2.putText(frame, line, (10, 30 + i*30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
 def draw_fps(frame, fps):
     text = f"FPS: {fps:.1f}"
@@ -34,6 +25,7 @@ def run_camera_server(params=None, output_queue=None):
         params = {}
     HOST = params.get("host", "0.0.0.0")
     PORT = params.get("port", 8485)
+    TAG_SIZE = params.get("tag_size", 0.037)  # 37 mm
 
     if output_queue is not None and output_queue.maxsize != 1:
         raise ValueError("output_queue must have maxsize=1.")
@@ -58,6 +50,10 @@ def run_camera_server(params=None, output_queue=None):
     xout.setStreamName("rgb")
     cam.preview.link(xout.input)
 
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
+    aruco_params = cv2.aruco.DetectorParameters()
+    detector = cv2.aruco.ArucoDetector(aruco_dict, aruco_params)
+
     with dai.Device(pipeline) as device:
         intrinsics = get_camera_intrinsics(device)
         rgb_queue = device.getOutputQueue(name="rgb", maxSize=1, blocking=True)
@@ -71,35 +67,48 @@ def run_camera_server(params=None, output_queue=None):
                 frame = in_rgb.getCvFrame()
                 gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
-                # Update FPS
+                # FPS update
                 now = time.time()
                 fps = 0.9 * fps + 0.1 * (1 / (now - prev_time))
                 prev_time = now
                 draw_fps(frame, fps)
 
-                corners, ids, _ = cv2.aruco.detectMarkers(gray, charuco_dict)
-                if ids is not None and len(ids) > 3:
+                # Detect ArUco markers
+                corners, ids, _ = detector.detectMarkers(gray)
+                if ids is not None and len(ids) > 0:
                     cv2.aruco.drawDetectedMarkers(frame, corners, ids)
-                    ret, charuco_corners, charuco_ids = charuco_detector.detectBoard(gray, corners, ids)
-                    if ret:
-                        success, rvec, tvec = cv2.aruco.estimatePoseCharucoBoard(
-                            charuco_corners, charuco_ids, charuco_board, intrinsics, None)
-                        if success:
-                            cv2.drawFrameAxes(frame, intrinsics, None, rvec, tvec, 0.05)
-                            draw_pose(frame, rvec, tvec)
-                            if output_queue and not output_queue.full():
-                                output_queue.put_nowait({
-                                    "id": "charuco",
-                                    "rvec": rvec.ravel().tolist(),
-                                    "tvec": tvec.ravel().tolist()
-                                })
-                        else:
-                            if output_queue and not output_queue.full():
-                                output_queue.put_nowait({"id": None})
+                    rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(
+                        corners, TAG_SIZE, intrinsics, None
+                    )
+
+                    for i, marker_id in enumerate(ids.flatten()):
+                        rvec = rvecs[i]
+                        tvec = tvecs[i]
+
+                        cv2.drawFrameAxes(frame, intrinsics, None, rvec, tvec, 0.05)
+                        cv2.putText(frame, f"ID: {marker_id}",
+                                    tuple(corners[i][0][0].astype(int) + np.array([5, -5])),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+                        draw_pose(frame, rvec, tvec)
+
+                        if output_queue is not None:
+                            pose_data = {
+                                "id": int(marker_id),
+                                "rvec": rvec.ravel().tolist(),
+                                "tvec": tvec.ravel().tolist()
+                            }
+                            if output_queue.full():
+                                try: output_queue.get_nowait()
+                                except queue.Empty: pass
+                            output_queue.put_nowait(pose_data)
                 else:
-                    if output_queue and not output_queue.full():
+                    if output_queue is not None:
+                        if output_queue.full():
+                            try: output_queue.get_nowait()
+                            except queue.Empty: pass
                         output_queue.put_nowait({"id": None})
 
+                # Encode and stream frame
                 _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
                 conn.sendall(struct.pack(">L", len(jpeg)) + jpeg)
 
