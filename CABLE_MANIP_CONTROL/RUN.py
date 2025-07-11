@@ -190,7 +190,7 @@ def motor_control():
                         print(f"\033[93mTELEOP: Completed {cycle_count} cycles!\033[0m")
 
                     T_tag_target = np.array([[1, 0, 0, x],
-                                            [0, 1, 0, y],
+                                            [0, 1, 0, -y],
                                             [0, 0, 1, z],
                                             [0, 0, 0, 1]])
                     
