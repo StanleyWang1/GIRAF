@@ -34,8 +34,30 @@ def estimate_pose(tag, camera_matrix, tag_size):
         [-tag_size/2,  tag_size/2, 0]
     ], dtype=np.float32)
     image_pts = np.array(tag.corners, dtype=np.float32)
+
     success, rvec, tvec = cv2.solvePnP(object_pts, image_pts, camera_matrix, None)
-    return (rvec, tvec) if success else (None, None)
+
+    if not success:
+        return None, None
+
+    # Optional: Reprojection error filtering
+    # projected, _ = cv2.projectPoints(object_pts, rvec, tvec, camera_matrix, None)
+    # projected = projected.reshape(-1, 2)
+    # error = np.linalg.norm(projected - image_pts, axis=1).mean()
+    # if error > 5:  # Pixels; adjust threshold if needed
+    #     return None, None
+
+    # Z-axis flip check: ensure tag normal points away from camera
+    R, _ = cv2.Rodrigues(rvec)
+    z_axis = R[:, 2]  # Z-axis is the third column of the rotation matrix
+
+    if z_axis[2] > 0:  # Z-axis pointing toward camera (bad)
+        R = R @ np.diag([1, -1, -1])  # Flip Y and Z axes
+        rvec, _ = cv2.Rodrigues(R)
+        tvec = -tvec  # Flip translation too
+
+    return rvec, tvec
+
 
 def run_camera_server(params=None, output_queue=None):
     if params is None:
