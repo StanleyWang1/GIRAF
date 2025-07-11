@@ -320,6 +320,8 @@ def pose_handler():
                     T_cam_tag[:3, 3] = tvec.ravel()
 
                     # Debug output
+                    T_cam_15_s = np.eye(4)
+                    T_cam_14_s = np.eye(4)
                     if tag_id == 15:
                         T_cam_15_s = T_cam_tag
                     elif tag_id == 14:
