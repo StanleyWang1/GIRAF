@@ -147,7 +147,7 @@ def motor_control():
                 elif LY or LX or RY or RX or LT or RT or AB or BB: # manual control  
                     tag_read = False
                     autonomous_mode = False
-                    waypoint_id = 0
+                    waypoint_id = 0.0
 
                     with velocity_lock:
                         velocity[0] = -0.25*LY # X velocity
@@ -176,8 +176,9 @@ def motor_control():
                 elif autonomous_mode:
                     # Get x,y,z point from loaded trajectory
                     if waypoint_id < len(trajectory):
-                        x, y, z = trajectory[waypoint_id]
-                        waypoint_id += speed
+                        x, y, z = trajectory[int(waypoint_id)]
+                        waypoint_id += 0.1
+
                     else:
                         x, y, z = trajectory[-1]
                         # waypoint_id = 0 # loop back to start
