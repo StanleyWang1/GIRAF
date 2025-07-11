@@ -305,20 +305,34 @@ def pose_handler():
         try:
             pose_list = pose_queue.get(timeout=1.0)
             if len(pose_list) > 0:
-                T_cam_15 = np.zeros((4, 4)) # placeholder for accumulated camera pose
+                T_cam_15_weighted = np.zeros((4, 4))
+                total_weight = 0.0
                 for pose in pose_list:
                     tag_id = pose["id"]
+                    weight = pose.get("weight", 1.0)  # Default to 1.0 if not provided
+
                     rvec = np.array(pose["rvec"]).reshape(3, 1)
                     tvec = np.array(pose["tvec"]).reshape(3, 1)
-
                     R, _ = cv2.Rodrigues(rvec)
+                    
                     T_cam_tag = np.eye(4)
                     T_cam_tag[:3, :3] = R
-                    T_cam_tag[:3, 3] = tvec.ravel() # SE(3) pose of tag in camera frame
+                    T_cam_tag[:3, 3] = tvec.ravel()
 
                     T_tag_15 = tag_to_15_transforms.get(tag_id, np.eye(4))
-                    T_cam_15 += T_cam_tag @ T_tag_15
-                T_cam_15_avg = T_cam_15 / len(pose_list)
+                    T_cam_15_weighted += weight * (T_cam_tag @ T_tag_15)
+                    total_weight += weight
+
+                if total_weight > 0:
+                    T_cam_15_avg = T_cam_15_weighted / total_weight
+                    with FK_num_lock:
+                        T_world_ee = FK_num
+                    with T_world_tag_lock:
+                        T_world_tag = T_world_ee @ T_ee_cam @ T_cam_15_avg
+                else:
+                    with T_world_tag_lock:
+                        T_world_tag = None
+
 
                 # Compute the pose of tag in world frame
                 with FK_num_lock:

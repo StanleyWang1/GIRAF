@@ -34,30 +34,21 @@ def estimate_pose(tag, camera_matrix, tag_size):
         [-tag_size/2,  tag_size/2, 0]
     ], dtype=np.float32)
     image_pts = np.array(tag.corners, dtype=np.float32)
-
     success, rvec, tvec = cv2.solvePnP(object_pts, image_pts, camera_matrix, None)
 
     if not success:
-        return None, None
+        return None, None, None
 
-    # Optional: Reprojection error filtering
-    # projected, _ = cv2.projectPoints(object_pts, rvec, tvec, camera_matrix, None)
-    # projected = projected.reshape(-1, 2)
-    # error = np.linalg.norm(projected - image_pts, axis=1).mean()
-    # if error > 5:  # Pixels; adjust threshold if needed
-    #     return None, None
+    # Compute reprojection error
+    projected_pts, _ = cv2.projectPoints(object_pts, rvec, tvec, camera_matrix, None)
+    error = np.linalg.norm(image_pts - projected_pts.squeeze(), axis=1)
+    mean_error = np.mean(error)
+    
+    # Convert to weight (lower error = higher weight)
+    epsilon = 1e-6
+    weight = 1.0 / (mean_error + epsilon)
 
-    # Z-axis flip check: ensure tag normal points away from camera
-    R, _ = cv2.Rodrigues(rvec)
-    z_axis = R[:, 2]  # Z-axis is the third column of the rotation matrix
-
-    if z_axis[2] < 0:  # Z-axis pointing toward camera (bad)
-        R = R @ np.diag([1, -1, -1])  # Flip Y and Z axes
-        rvec, _ = cv2.Rodrigues(R)
-        tvec = -tvec  # Flip translation too
-
-    return rvec, tvec
-
+    return rvec, tvec, weight
 
 def run_camera_server(params=None, output_queue=None):
     if params is None:
@@ -115,7 +106,7 @@ def run_camera_server(params=None, output_queue=None):
 
                 if tags:
                     for tag in tags:
-                        rvec, tvec = estimate_pose(tag, intrinsics, TAG_SIZE)
+                        rvec, tvec, weight = estimate_pose(tag, intrinsics, TAG_SIZE)
                         if rvec is not None:
                             draw_pose(frame, rvec, tvec)
                             for pt in tag.corners:
@@ -124,7 +115,8 @@ def run_camera_server(params=None, output_queue=None):
                             pose_list.append({
                                 "id": tag.tag_id,
                                 "rvec": rvec.ravel().tolist(),
-                                "tvec": tvec.ravel().tolist()
+                                "tvec": tvec.ravel().tolist(),
+                                "weight": weight
                             })
 
                 # Send full list of tag poses to the output queue
