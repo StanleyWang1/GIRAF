@@ -51,7 +51,7 @@ def estimate_pose(tag, camera_matrix, tag_size):
     R, _ = cv2.Rodrigues(rvec)
     z_axis = R[:, 2]  # Z-axis is the third column of the rotation matrix
 
-    if z_axis[2] > 0:  # Z-axis pointing toward camera (bad)
+    if z_axis[2] < 0:  # Z-axis pointing toward camera (bad)
         R = R @ np.diag([1, -1, -1])  # Flip Y and Z axes
         rvec, _ = cv2.Rodrigues(R)
         tvec = -tvec  # Flip translation too
