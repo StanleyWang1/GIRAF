@@ -12,8 +12,11 @@ from motor_driver import motor_connect, motor_status, motor_drive, motor_disconn
 from kinematic_model import num_jacobian, num_forward_kinematics
 
 # from new_cable_traj import trajectory
-from square_traj import trajectory
-# from square_test import trajectory
+# from square_traj import trajectory
+
+import pandas as pd
+trajectory_df = pd.read_csv("STANLEY_CONVERTED2TABLE.csv")  # Replace with actual path
+trajectory = trajectory_df[["x", "y", "z"]].values  # Convert to numpy array of shape (N, 3)
 
 ## ----------------------------------------------------------------------------------------------------
 # Joystick Controller Teleoperation
@@ -177,18 +180,18 @@ def motor_control():
                         waypoint_id += speed
                     else:
                         x, y, z = trajectory[-1]
-                        waypoint_id = 0 # loop back to start
-                        cycle_count += 1
-                        if cycle_count >= 20:
-                            autonomous_mode = False
-                            with velocity_lock:
-                                velocity = np.zeros((6, 1))
-                                gripper_velocity = 0
+                        # waypoint_id = 0 # loop back to start
+                        # cycle_count += 1
+                        # if cycle_count >= 20:
+                        autonomous_mode = False
+                        with velocity_lock:
+                            velocity = np.zeros((6, 1))
+                            gripper_velocity = 0
                         print(f"\033[93mTELEOP: Completed {cycle_count} cycles!\033[0m")
 
-                    T_tag_target = np.array([[1, 0, 0, -0.25 - 0.15],
-                                            [0, 1, 0, 0],
-                                            [0, 0, 1, -0.2 - 0.15],
+                    T_tag_target = np.array([[1, 0, 0, x],
+                                            [0, 1, 0, y],
+                                            [0, 0, 1, z],
                                             [0, 0, 0, 1]])
                     
                     # Update tag pose if available
@@ -284,22 +287,22 @@ def pose_handler():
                          [1, 0, 0, -0.00705],
                          [0, -0.173648, 0.984808, -0.076365],
                          [0, 0, 0, 1]])
-    x_dist = 89.5/1000
-    y_dist = 89.5/1000
-    tag_to_15_transforms = {11: np.array([[1, 0, 0, x_dist],
-                                          [0, 1, 0, -2*y_dist],
+    x_dist = 110.0/1000
+    y_dist = 120.0/1000
+    tag_to_15_transforms = {11: np.array([[1, 0, 0, 2*x_dist],
+                                          [0, 1, 0, y_dist],
                                           [0, 0, 1, 0.0],
                                           [0, 0, 0, 1]]),
                             12: np.array([[1, 0, 0, x_dist],
-                                          [0, 1, 0, -y_dist],
+                                          [0, 1, 0, y_dist],
                                           [0, 0, 1, 0.0],
                                           [0, 0, 0, 1]]),
-                            13: np.array([[1, 0, 0, x_dist],
+                            13: np.array([[1, 0, 0, 0.0],
+                                          [0, 1, 0, y_dist],
+                                          [0, 0, 1, 0.0],
+                                          [0, 0, 0, 1]]),
+                            14: np.array([[1, 0, 0, x_dist],
                                           [0, 1, 0, 0.0],
-                                          [0, 0, 1, 0.0],
-                                          [0, 0, 0, 1]]),
-                            14: np.array([[1, 0, 0, 0.0],
-                                          [0, 1, 0, -y_dist],
                                           [0, 0, 1, 0.0],
                                           [0, 0, 0, 1]]),
                             15: np.eye(4)}
