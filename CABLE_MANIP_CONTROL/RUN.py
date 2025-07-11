@@ -5,7 +5,7 @@ import time
 import cv2
 
 # from charuco_detect import run_camera_server
-from camera_driver import run_camera_server
+from camera_multi_detect import run_camera_server
 from control_table import MOTOR11_HOME, MOTOR12_HOME, MOTOR13_HOME, MOTOR14_OPEN, MOTOR14_CLOSED
 from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disconnect, radians_to_ticks
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
@@ -187,9 +187,9 @@ def motor_control():
                                 gripper_velocity = 0
                         print(f"\033[93mTELEOP: Completed {cycle_count} cycles!\033[0m")
 
-                    T_tag_target = np.array([[1, 0, 0, x],
-                                            [0, 1, 0, y],
-                                            [0, 0, 1, z],
+                    T_tag_target = np.array([[1, 0, 0, -0.15],
+                                            [0, 1, 0, -0.05],
+                                            [0, 0, 1, -0.15],
                                             [0, 0, 0, 1]])
                     
                     # Update tag pose if available
@@ -285,23 +285,47 @@ def pose_handler():
                          [1, 0, 0, -0.00705],
                          [0, -0.173648, 0.984808, -0.076365],
                          [0, 0, 0, 1]])
-
+    tag_to_15_transforms = {11: np.array([[1, 0, 0, 0.22],
+                                          [0, 1, 0, 0.12],
+                                          [0, 0, 1, 0.0],
+                                          [0, 0, 0, 1]]),
+                            12: np.array([[1, 0, 0, 0.11],
+                                          [0, 1, 0, 0.12],
+                                          [0, 0, 1, 0.0],
+                                          [0, 0, 0, 1]]),
+                            13: np.array([[1, 0, 0, 0.0],
+                                          [0, 1, 0, 0.12],
+                                          [0, 0, 1, 0.0],
+                                          [0, 0, 0, 1]]),
+                            14: np.array([[1, 0, 0, 0.11],
+                                          [0, 1, 0, 0.0],
+                                          [0, 0, 1, 0.0],
+                                          [0, 0, 0, 1]]),
+                            15: np.eye(4)}
     while running:
         try:
-            pose = pose_queue.get(timeout=1.0)
-            if pose["id"] is not None:
-                rvec = np.array(pose["rvec"]).reshape(3, 1)
-                tvec = np.array(pose["tvec"]).reshape(3, 1)
-                R, _ = cv2.Rodrigues(rvec)
-                T_cam_tag = np.eye(4)
-                T_cam_tag[:3, :3] = R
-                T_cam_tag[:3, 3] = tvec.ravel()
+            pose_list = pose_queue.get(timeout=1.0)
+            if len(pose_list) > 0:
+                T_cam_15 = np.zeros((4, 4)) # placeholder for accumulated camera pose
+                for pose in pose_list:
+                    tag_id = pose["id"]
+                    rvec = np.array(pose["rvec"]).reshape(3, 1)
+                    tvec = np.array(pose["tvec"]).reshape(3, 1)
+
+                    R, _ = cv2.Rodrigues(rvec)
+                    T_cam_tag = np.eye(4)
+                    T_cam_tag[:3, :3] = R
+                    T_cam_tag[:3, 3] = tvec.ravel() # SE(3) pose of tag in camera frame
+
+                    T_tag_15 = tag_to_15_transforms.get(tag_id, np.eye(4))
+                    T_cam_15 += T_tag_15 @ T_cam_tag
+                T_cam_15_avg = T_cam_15 / len(pose_list)
 
                 # Compute the pose of tag in world frame
                 with FK_num_lock:
                     T_world_ee = FK_num
                 with T_world_tag_lock:
-                    T_world_tag = T_world_ee @ T_ee_cam @ T_cam_tag
+                    T_world_tag = T_world_ee @ T_ee_cam @ T_cam_15_avg # in tag 15 frame
                 # T_tag_cam = np.linalg.inv(T_world_tag) @ T_world_ee @ T_ee_cam
                 # print(T_tag_cam[:3, 3])
             else:

@@ -6,11 +6,11 @@ import time
 
 def get_camera_intrinsics(device):
     calib = device.readCalibration()
-    # intrinsics = np.array(calib.getCameraIntrinsics(dai.CameraBoardSocket.RGB, 640, 480))
-    intrinsics = np.array([[704.584, 0.0,     325.885],
-                            [0.0,    704.761, 245.785],
-                            [0.0,    0.0,     1.0]])
-    return intrinsics
+    # Alternatively, use actual calibration:
+    # return np.array(calib.getCameraIntrinsics(dai.CameraBoardSocket.RGB, 640, 480))
+    return np.array([[704.584, 0.0,     325.885],
+                     [0.0,    704.761, 245.785],
+                     [0.0,    0.0,     1.0]])
 
 def draw_pose(frame, rvec, tvec):
     text = f"T: {tvec.ravel()}\nR: {rvec.ravel()}"
@@ -21,8 +21,8 @@ def draw_pose(frame, rvec, tvec):
 def draw_fps(frame, fps):
     text = f"FPS: {fps:.1f}"
     text_size, _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)
-    text_x = frame.shape[1] - text_size[0] - 10  # 10 px from right edge
-    text_y = 30  # 30 px from top
+    text_x = frame.shape[1] - text_size[0] - 10
+    text_y = 30
     cv2.putText(frame, text, (text_x, text_y),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
 
@@ -35,17 +35,17 @@ def estimate_pose(tag, camera_matrix, tag_size):
     ], dtype=np.float32)
     image_pts = np.array(tag.corners, dtype=np.float32)
     success, rvec, tvec = cv2.solvePnP(object_pts, image_pts, camera_matrix, None)
-    return rvec, tvec if success else (None, None)
+    return (rvec, tvec) if success else (None, None)
 
 def run_camera_server(params=None, output_queue=None):
     if params is None:
         params = {}
     HOST = params.get("host", "0.0.0.0")
     PORT = params.get("port", 8485)
-    TAG_SIZE = params.get("tag_size", 0.065)
+    TAG_SIZE = params.get("tag_size", 0.065)  # in meters
 
     if output_queue is not None and output_queue.maxsize != 1:
-        raise ValueError("output_queue must have maxsize=1 for low-latency mode.")
+        raise ValueError("output_queue must have maxsize=1")
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -88,7 +88,9 @@ def run_camera_server(params=None, output_queue=None):
                 prev_time = curr_time
                 draw_fps(frame, fps)
 
+                pose_list = []
                 tags = detector.detect(gray)
+
                 if tags:
                     for tag in tags:
                         rvec, tvec = estimate_pose(tag, intrinsics, TAG_SIZE)
@@ -97,26 +99,22 @@ def run_camera_server(params=None, output_queue=None):
                             for pt in tag.corners:
                                 cv2.circle(frame, tuple(map(int, pt)), 5, (0, 255, 0), -1)
 
-                            if output_queue is not None:
-                                pose_data = {
-                                    "id": tag.tag_id,
-                                    "rvec": rvec.ravel().tolist(),
-                                    "tvec": tvec.ravel().tolist(),
-                                }
-                                if output_queue.full():
-                                    try: output_queue.get_nowait()
-                                    except queue.Empty: pass
-                                output_queue.put_nowait(pose_data)
-                else:
-                    if output_queue is not None:
-                        if output_queue.full():
-                            try: output_queue.get_nowait()
-                            except queue.Empty: pass
-                        output_queue.put_nowait({"id": None})
+                            pose_list.append({
+                                "id": tag.tag_id,
+                                "rvec": rvec.ravel().tolist(),
+                                "tvec": tvec.ravel().tolist()
+                            })
 
+                # Send full list of tag poses to the output queue
+                if output_queue is not None:
+                    if output_queue.full():
+                        try: output_queue.get_nowait()
+                        except queue.Empty: pass
+                    output_queue.put_nowait(pose_list)  # [] if no tags
+
+                # JPEG encode and send over TCP
                 _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
-                data = jpeg.tobytes()
-                conn.sendall(struct.pack(">L", len(data)) + data)
+                conn.sendall(struct.pack(">L", len(jpeg)) + jpeg.tobytes())
 
         except Exception as e:
             print(f"[camera_driver] Error: {e}")
