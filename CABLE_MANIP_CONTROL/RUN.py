@@ -311,7 +311,7 @@ def pose_handler():
                 # Debug
                 T_cam_15_s = np.eye(4)
                 T_cam_14_s = np.eye(4)
-                
+
                 for pose in pose_list:
                     tag_id = pose["id"]
                     weight = pose.get("weight", 1.0)  # Default to 1.0 if not provided
@@ -327,7 +327,7 @@ def pose_handler():
                     # Debug output
                     if tag_id == 15:
                         T_cam_15_s = T_cam_tag
-                    elif tag_id == 14:
+                    elif tag_id == 11:
                         T_cam_14_s = T_cam_tag
 
                     T_tag_15 = tag_to_15_transforms.get(tag_id, np.eye(4))
