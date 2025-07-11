@@ -284,8 +284,8 @@ def pose_handler():
                          [1, 0, 0, -0.00705],
                          [0, -0.173648, 0.984808, -0.076365],
                          [0, 0, 0, 1]])
-    tag_to_15_transforms = {11: np.array([[1, 0, 0, 0.0],
-                                          [0, 1, 0, 0.0],
+    tag_to_15_transforms = {11: np.array([[1, 0, 0, 0.22],
+                                          [0, 1, 0, 0.12],
                                           [0, 0, 1, 0.0],
                                           [0, 0, 0, 1]]),
                             12: np.array([[1, 0, 0, 0.11],
@@ -317,7 +317,7 @@ def pose_handler():
                     T_cam_tag[:3, 3] = tvec.ravel() # SE(3) pose of tag in camera frame
 
                     T_tag_15 = tag_to_15_transforms.get(tag_id, np.eye(4))
-                    T_cam_15 += T_tag_15 @ T_cam_tag
+                    T_cam_15 += T_cam_tag @ T_tag_15
                 T_cam_15_avg = T_cam_15 / len(pose_list)
 
                 # Compute the pose of tag in world frame
