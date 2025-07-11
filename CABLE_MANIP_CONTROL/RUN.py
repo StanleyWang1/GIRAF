@@ -319,9 +319,18 @@ def pose_handler():
                     T_cam_tag[:3, :3] = R
                     T_cam_tag[:3, 3] = tvec.ravel()
 
+                    # Debug output
+                    if tag_id == 15:
+                        T_cam_15_s = T_cam_tag
+                    elif tag_id == 14:
+                        T_cam_14_s = T_cam_tag
+
                     T_tag_15 = tag_to_15_transforms.get(tag_id, np.eye(4))
                     T_cam_15_weighted += weight * (T_cam_tag @ T_tag_15)
                     total_weight += weight
+
+                T_14_15 = np.linalg.inv(T_cam_14_s) @ T_cam_15_s
+                print(T_14_15[:3, 3].flatten())
 
                 if total_weight > 0:
                     T_cam_15_avg = T_cam_15_weighted / total_weight
@@ -332,15 +341,6 @@ def pose_handler():
                 else:
                     with T_world_tag_lock:
                         T_world_tag = None
-
-
-                # Compute the pose of tag in world frame
-                with FK_num_lock:
-                    T_world_ee = FK_num
-                with T_world_tag_lock:
-                    T_world_tag = T_world_ee @ T_ee_cam @ T_cam_15_avg # in tag 15 frame
-                # T_tag_cam = np.linalg.inv(T_world_tag) @ T_world_ee @ T_ee_cam
-                # print(T_tag_cam[:3, 3])
             else:
                 with T_world_tag_lock:
                     T_world_tag = None
