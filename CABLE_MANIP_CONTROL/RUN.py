@@ -307,6 +307,11 @@ def pose_handler():
             if len(pose_list) > 0:
                 T_cam_15_weighted = np.zeros((4, 4))
                 total_weight = 0.0
+
+                # Debug
+                T_cam_15_s = np.eye(4)
+                T_cam_14_s = np.eye(4)
+                
                 for pose in pose_list:
                     tag_id = pose["id"]
                     weight = pose.get("weight", 1.0)  # Default to 1.0 if not provided
@@ -320,8 +325,6 @@ def pose_handler():
                     T_cam_tag[:3, 3] = tvec.ravel()
 
                     # Debug output
-                    T_cam_15_s = np.eye(4)
-                    T_cam_14_s = np.eye(4)
                     if tag_id == 15:
                         T_cam_15_s = T_cam_tag
                     elif tag_id == 14:
