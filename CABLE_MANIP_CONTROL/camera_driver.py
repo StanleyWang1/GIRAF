@@ -55,7 +55,7 @@ def run_camera_server(params=None, output_queue=None):
         params = {}
     HOST = params.get("host", "0.0.0.0")
     PORT = params.get("port", 8485)
-    TAG_SIZE = params.get("tag_size", 0.0385)  # in meters
+    TAG_SIZE = params.get("tag_size", 0.048)  # in meters
 
     if output_queue is not None and output_queue.maxsize != 1:
         raise ValueError("output_queue must have maxsize=1")
