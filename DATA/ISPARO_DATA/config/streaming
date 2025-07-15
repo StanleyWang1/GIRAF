@@ -1,0 +1,10 @@
+# ISPARO_DATA/config/streaming.yaml (YAML file)
+# Save this in plain text, not Python format!
+
+client_ip: "172.24.68.157"
+server_ip: "172.24.68.77"
+
+table_id: 10
+gripper_id: 6
+
+output_csv: "data/raw_optitrack/TEST_TRIAL.csv"
