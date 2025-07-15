@@ -9,10 +9,11 @@ import numpy as np
 from utils.metrics import local_max_errors, compute_error_stats
 from utils.plot import plot_task_tube_spheres, plot_task_tube_ellipsoids
 
+root = True
+
 EXPERIMENT_NAME = "ROBOT_STANLEY_TRAJ_1"
 # Paths to robot and goal trajectories
 robot_path = f"data/processed/{EXPERIMENT_NAME}_CONVERTED.csv"
-
 
 # Use the average trajectory as the goal
 goal_path = f"data/processed/{EXPERIMENT_NAME}_AVG.csv"
@@ -22,6 +23,11 @@ plot_path = f"plots/{EXPERIMENT_NAME}_vs_AVG.png"
 # goal_path = "data/processed/STANLEY_TRAJ_1_CONVERTED.csv"
 # plot_path = f"plots/{EXPERIMENT_NAME}_vs_GOAL.png"
 
+if root:
+    base_dir = "./DATA/ISPARO_DATA/"
+    robot_path = os.path.join(base_dir, robot_path)
+    goal_path = os.path.join(base_dir, goal_path)
+    plot_path = os.path.join(base_dir, plot_path)
 
 robot_traj = np.loadtxt(robot_path, delimiter=',')
 goal_traj = np.loadtxt(goal_path, delimiter=',')

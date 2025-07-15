@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from utils.plot import set_axes_equal, hide_axes
 
+root = True
+
 # ---- CONFIGURE HERE ----
 files_and_colors = [
     ("data/processed/0.5X_SPEED_BOOM_CONVERTED.csv", "orange", "0.5x speed"),
@@ -14,6 +16,16 @@ files_and_colors = [
 ]
 
 plot_path = "plots/0.5_1_2x_speeds.png"
+
+if root:
+    # Prepend the base directory to all file paths
+    base_dir = "./DATA/ISPARO_DATA/"
+    files_and_colors = [
+        (os.path.join(base_dir, filepath), color, label)
+        for filepath, color, label in files_and_colors
+    ]
+    plot_path = os.path.join(base_dir, plot_path)
+
 # ------------------------
 
 fig = plt.figure(figsize=(6, 6))
