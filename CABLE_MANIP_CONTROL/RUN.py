@@ -142,7 +142,7 @@ def motor_control():
                     speed = float(input("Enter speed multiplier (1, 2, 4x): "))
                     autonomous_mode = True
                     cycle_count = 0
-                    dx, dy, dz = 0.0, 0.0, 0.0
+                    feed_forward_velocity = np.zeros((3,))
                     # Y BUTTON -- enter autonomous mode!
 
                 elif LY or LX or RY or RX or LT or RT or AB or BB: # manual control  
@@ -179,7 +179,7 @@ def motor_control():
                     if waypoint_id < len(trajectory):
                         x, y, z = trajectory[int(waypoint_id)]
                         if waypoint_id > 0:
-                            dx, dy, dz = trajectory[int(waypoint_id)] - trajectory[int(waypoint_id - 1)]
+                            feed_forward_velocity = trajectory[int(waypoint_id)] - trajectory[int(waypoint_id - 1)]
                         waypoint_id += speed
 
                     else:
@@ -212,7 +212,7 @@ def motor_control():
 
                         with FK_num_lock:
                             EE_pose = FK_num[:3, 3]
-                        P_velocity = 3.0 * (target_pose - EE_pose) + 0.5*[dx, dy, dz]/0.01# move towards target pose
+                        P_velocity = 3.0 * (target_pose - EE_pose) + 0.5*feed_forward_velocity/0.01# move towards target pose
                         P_velocity = np.clip(P_velocity, -0.5, 0.5) # set velocity limits
                         with velocity_lock:
                             velocity[0] = P_velocity[0] # X velocity
