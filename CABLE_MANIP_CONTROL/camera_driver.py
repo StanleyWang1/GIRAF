@@ -5,8 +5,8 @@ import queue
 import time
 
 def get_camera_intrinsics(device):
-    calib = device.readCalibration()
     # Alternatively, use actual calibration:
+    # calib = device.readCalibration()
     # return np.array(calib.getCameraIntrinsics(dai.CameraBoardSocket.RGB, 640, 480))
     return np.array([[704.584, 0.0,     325.885],
                      [0.0,    704.761, 245.785],
