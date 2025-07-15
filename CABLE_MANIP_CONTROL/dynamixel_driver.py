@@ -58,7 +58,7 @@ def dynamixel_connect():
     controller.WRITE(JOINT1, TORQUE_ENABLE, 1)
     controller.WRITE(JOINT2, TORQUE_ENABLE, 1)
     controller.WRITE(JOINT3, TORQUE_ENABLE, 1)
-    controller.WRITE(GRIPPER, TORQUE_ENABLE, 1)
+    controller.WRITE(GRIPPER, TORQUE_ENABLE, 0)  # Gripper torque off for now
 
     return controller, group_sync_write
 
