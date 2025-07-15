@@ -142,7 +142,7 @@ def motor_control():
                     speed = float(input("Enter speed multiplier (1, 2, 4x): "))
                     autonomous_mode = True
                     cycle_count = 0
-                    dx, dy, dz = 0, 0, 0
+                    dx, dy, dz = 0.0, 0.0, 0.0
                     # Y BUTTON -- enter autonomous mode!
 
                 elif LY or LX or RY or RX or LT or RT or AB or BB: # manual control  
