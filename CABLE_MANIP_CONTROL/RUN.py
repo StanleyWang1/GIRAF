@@ -12,11 +12,11 @@ from motor_driver import motor_connect, motor_status, motor_drive, motor_disconn
 from kinematic_model import num_jacobian, num_forward_kinematics
 
 # from new_cable_traj import trajectory
-# from square_traj import trajectory
+from square_traj import trajectory
 
-import pandas as pd
-trajectory_df = pd.read_csv("STANLEY_CONVERTED2TABLE.csv")  # Replace with actual path
-trajectory = trajectory_df[["x", "y", "z"]].values  # Convert to numpy array of shape (N, 3)
+# import pandas as pd
+# trajectory_df = pd.read_csv("STANLEY_CONVERTED2TABLE.csv")  # Replace with actual path
+# trajectory = trajectory_df[["x", "y", "z"]].values  # Convert to numpy array of shape (N, 3)
 
 ## ----------------------------------------------------------------------------------------------------
 # Joystick Controller Teleoperation
@@ -184,10 +184,10 @@ def motor_control():
 
                     else:
                         x, y, z = trajectory[-1]
-                        # waypoint_id = 0 # loop back to start
-                        # cycle_count += 1
-                        # if cycle_count >= 20:
-                        autonomous_mode = False
+                        waypoint_id = 0 # loop back to start
+                        cycle_count += 1
+                        if cycle_count >= 20:
+                            autonomous_mode = False
                         with velocity_lock:
                             velocity = np.zeros((6, 1))
                             gripper_velocity = 0
