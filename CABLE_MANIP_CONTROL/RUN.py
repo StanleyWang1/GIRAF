@@ -329,6 +329,16 @@ def pose_handler():
                 T_cam_tag[:3, :3] = R
                 T_cam_tag[:3, 3] = tvec.ravel()
 
+                # Extract camera angle
+                T_tag_cam = np.linalg.inv(T_cam_tag)
+                R_tag_cam = T_tag_cam[:3, :3]
+                y_cam_in_tag = R_tag_cam[:, 1]  # Second column of rotation matrix
+                z_tag = np.array([0, 0, 1])  # Tag Z-axis in its own frame
+                cos_theta = np.dot(y_cam_in_tag, z_tag)
+                angle_rad = np.arccos(np.clip(np.abs(cos_theta), -1.0, 1.0))
+                angle_deg = np.degrees(angle_rad)
+                print(f"Camera/tag angle: {angle_deg:.2f} deg")
+
                 T_tag_15 = tag_to_15_transforms.get(tag_id, np.eye(4))
                 T_cam_15_best = T_cam_tag @ T_tag_15
 
