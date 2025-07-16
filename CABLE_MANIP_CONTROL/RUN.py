@@ -291,8 +291,11 @@ def pose_handler():
                          [1, 0, 0, -0.00705],
                          [0, -0.173648, 0.984808, -0.076365],
                          [0, 0, 0, 1]])
-    x_dist = 110.0/1000
-    y_dist = 120.0/1000
+    # Version 1 Multitag Mount
+    # x_dist = 110.0/1000
+    # y_dist = 120.0/1000
+    x_dist = 106.0/1000
+    y_dist = 106.0/1000
     tag_to_15_transforms = {11: np.array([[1, 0, 0, 2*x_dist],
                                           [0, 1, 0, y_dist],
                                           [0, 0, 1, 0.0],
