@@ -347,9 +347,9 @@ def pose_handler():
                 with T_world_tag_lock:
                     T_world_tag = T_world_ee @ T_ee_cam @ T_cam_15_best
 
-                # Debug printout
-                T_15_ee = np.linalg.inv(T_ee_cam @ T_cam_15_best)
-                print(T_15_ee[:3,3])
+                # Debug printout (pos of EE in tag 15 frame)
+                # T_15_ee = np.linalg.inv(T_ee_cam @ T_cam_15_best)
+                # print(T_15_ee[:3,3])
 
             else:
                 with T_world_tag_lock:
