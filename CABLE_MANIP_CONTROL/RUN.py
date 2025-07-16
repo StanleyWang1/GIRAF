@@ -277,7 +277,7 @@ def camera_server():
     global pose_queue, running
     params = {
         "port": 8485,
-        "tag_size": 0.048  # meters
+        "tag_size": 0.046  # meters
     }
     run_camera_server(params=params, output_queue=pose_queue)
 
