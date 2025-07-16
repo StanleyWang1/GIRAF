@@ -155,7 +155,7 @@ def motor_control():
                         velocity[1] = -0.25*LX # Y velocity
 
                         velocity[4] = 0.5*RY # WY angular velocity
-                        velocity[5] = -0.5*RX # WZ angular velocity
+                        velocity[3] = -0.5*RX # WZ angular velocity
 
                     if RT and not LT: # Z up
                         with velocity_lock:
