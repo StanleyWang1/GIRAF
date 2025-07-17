@@ -349,7 +349,7 @@ def pose_handler():
             pose_list = pose_queue.get(timeout=1.0)
             if len(pose_list) > 0:
                 # Find the pose with the highest weight
-                best_pose = min(pose_list, key=lambda pose: abs(pose.get("id", 16) - 16.1))
+                best_pose = min(pose_list, key=lambda pose: (pose.get("id", 16) - 16.1)**2)
                 tag_id = best_pose["id"]
 
                 rvec = np.array(best_pose["rvec"]).reshape(3, 1)
