@@ -89,6 +89,7 @@ def run_camera_server(params=None, output_queue=None):
         prev_time = time.time()
         fps = 0.0
 
+        tag_hierarchy = {11:10, 12:7, 13:4, 14:2, 15:1, 16:3, 17:6, 18:8, 19:5, 20:9}
         try:
             while True:
                 in_rgb = rgb_queue.get()
@@ -106,7 +107,7 @@ def run_camera_server(params=None, output_queue=None):
 
                 if tags:
                     # Find the tag with the lowest id
-                    min_tag = min(tags, key=lambda t: t.tag_id)
+                    min_tag = min(tags, key=lambda t: tag_hierarchy.get(t.tag_id))
                     tag = min_tag
                     rvec, tvec, weight = estimate_pose(tag, intrinsics, TAG_SIZE)
                     if rvec is not None:
