@@ -349,7 +349,7 @@ def pose_handler():
             pose_list = pose_queue.get(timeout=1.0)
             if len(pose_list) > 0:
                 # Find the pose with the highest weight
-                best_pose = min(pose_list, key=lambda pose: (pose.get("id", 16) - 16.1)**2)
+                best_pose = min(pose_list, key=lambda pose: pose.get("id", 16))
                 tag_id = best_pose["id"]
                 print(tag_id)
 
@@ -373,7 +373,7 @@ def pose_handler():
                     if not input_mode:
                         # print(f"Camera/tag angle: {angle_deg:.2f} deg")
                         pass
-                    
+
                 T_tag_16 = tag_to_16_transforms.get(tag_id, np.eye(4))
                 T_cam_16_best = T_cam_tag @ T_tag_16
 
