@@ -286,7 +286,7 @@ def camera_server():
     global pose_queue, running
     params = {
         "port": 8485,
-        "tag_size": 0.0383  # meters
+        "tag_size": 0.0538  # meters
     }
     run_camera_server(params=params, output_queue=pose_queue)
 
@@ -305,8 +305,8 @@ def pose_handler():
     # y_dist = 120.0/1000
     # x_dist = 106.0/1000
     # y_dist = 106.0/1000
-    x_dist = 73.0/1000
-    y_dist = 79.0/1000
+    x_dist = 100.5/1000
+    y_dist = 70.0/1000
     tag_to_16_transforms = {11: np.array([[1, 0, 0, 2*x_dist],
                                           [0, 1, 0, y_dist],
                                           [0, 0, 1, 0.0],
@@ -319,37 +319,25 @@ def pose_handler():
                                           [0, 1, 0, y_dist],
                                           [0, 0, 1, 0.0],
                                           [0, 0, 0, 1]]),
-                            14: np.array([[1, 0, 0, -x_dist],
-                                          [0, 1, 0, y_dist],
-                                          [0, 0, 1, 0.0],
-                                          [0, 0, 0, 1]]),
-                            15: np.array([[1, 0, 0, x_dist],
+                            14: np.array([[1, 0, 0, x_dist],
                                           [0, 1, 0, 0.0],
                                           [0, 0, 1, 0.0],
                                           [0, 0, 0, 1]]),
-                            16: np.eye(4),
-                            17: np.array([[1, 0, 0, -x_dist],
-                                          [0, 1, 0, 0.0],
-                                          [0, 0, 1, 0.0],
-                                          [0, 0, 0, 1]]),
-                            18: np.array([[1, 0, 0, x_dist],
+                            15: np.eye(4),
+                            16: np.array([[1, 0, 0, x_dist],
                                           [0, 1, 0, -y_dist],
                                           [0, 0, 1, 0.0],
                                           [0, 0, 0, 1]]),
-                            19: np.array([[1, 0, 0, 0.0],
+                            17: np.array([[1, 0, 0, 0.0],
                                           [0, 1, 0, -y_dist],
                                           [0, 0, 1, 0.0],
-                                          [0, 0, 0, 1]]),
-                            20: np.array([[1, 0, 0, -x_dist],
-                                          [0, 1, 0, -y_dist],
-                                          [0, 0, 1, 0.0],
-                                          [0, 0, 0, 1]]),}
+                                          [0, 0, 0, 1]])}
     while running:
         try:
             pose_list = pose_queue.get(timeout=1.0)
             if len(pose_list) > 0:
                 # Find the pose with the highest weight
-                best_pose = min(pose_list, key=lambda pose: pose.get("id", 16))
+                best_pose = min(pose_list, key=lambda pose: pose.get("id", 15))
                 tag_id = best_pose["id"]
                 print(tag_id)
 
