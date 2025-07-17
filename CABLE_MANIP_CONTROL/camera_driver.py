@@ -89,7 +89,7 @@ def run_camera_server(params=None, output_queue=None):
         prev_time = time.time()
         fps = 0.0
 
-        tag_hierarchy = {11:10, 12:7, 13:4, 14:2, 15:1, 16:3, 17:6, 18:8, 19:5, 20:9}
+        tag_hierarchy = {11:1, 12:2, 13:5, 14:8, 15:3, 16:4, 17:9, 18:6, 19:7, 20:10}
         try:
             while True:
                 in_rgb = rgb_queue.get()
