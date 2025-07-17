@@ -200,9 +200,9 @@ def motor_control():
                             gripper_velocity = 0
                         print(f"\033[93mTELEOP: Completed {cycle_count} cycles!\033[0m")
 
-                    T_tag_target = np.array([[1, 0, 0, x],
-                                            [0, 1, 0, y],
-                                            [0, 0, 1, z],
+                    T_tag_target = np.array([[1, 0, 0, -0.3],
+                                            [0, 1, 0, 0],
+                                            [0, 0, 1, -0.3],
                                             [0, 0, 0, 1]])
                     
                     # Update tag pose if available
@@ -306,7 +306,7 @@ def pose_handler():
     # x_dist = 106.0/1000
     # y_dist = 106.0/1000
     x_dist = 73.0/1000
-    y_dist = 79.5/1000
+    y_dist = 79.0/1000
     tag_to_16_transforms = {11: np.array([[1, 0, 0, 2*x_dist],
                                           [0, 1, 0, y_dist],
                                           [0, 0, 1, 0.0],
