@@ -351,6 +351,7 @@ def pose_handler():
                 # Find the pose with the highest weight
                 best_pose = min(pose_list, key=lambda pose: (pose.get("id", 16) - 16.1)**2)
                 tag_id = best_pose["id"]
+                print(tag_id)
 
                 rvec = np.array(best_pose["rvec"]).reshape(3, 1)
                 tvec = np.array(best_pose["tvec"]).reshape(3, 1)
@@ -370,8 +371,9 @@ def pose_handler():
                 angle_deg = np.degrees(angle_rad)
                 with input_lock:
                     if not input_mode:
-                        print(f"Camera/tag angle: {angle_deg:.2f} deg")
-
+                        # print(f"Camera/tag angle: {angle_deg:.2f} deg")
+                        pass
+                    
                 T_tag_16 = tag_to_16_transforms.get(tag_id, np.eye(4))
                 T_cam_16_best = T_cam_tag @ T_tag_16
 
