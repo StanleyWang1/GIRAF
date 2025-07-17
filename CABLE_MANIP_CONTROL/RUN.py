@@ -202,7 +202,7 @@ def motor_control():
 
                     T_tag_target = np.array([[1, 0, 0, x],
                                             [0, 1, 0, y],
-                                            [0, 0, 1, z],
+                                            [0, 0, 1, z - 0.075],
                                             [0, 0, 0, 1]])
                     
                     # Update tag pose if available
