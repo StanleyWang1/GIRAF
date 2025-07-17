@@ -35,6 +35,9 @@ FK_num_lock = threading.Lock()
 T_world_tag = np.zeros((4, 4))
 T_world_tag_lock = threading.Lock()
 
+input_mode = False
+input_lock = threading.Lock()
+
 running = True
 running_lock = threading.Lock()
 
@@ -61,7 +64,7 @@ def joystick_monitor():
 # Motor Control Thread
 ## ----------------------------------------------------------------------------------------------------
 def motor_control():
-    global joystick_data, velocity, FK_num, T_world_tag, running
+    global joystick_data, velocity, FK_num, T_world_tag, running, input_mode
 
     def inverse_jacobian(joint_coords):
         J = num_jacobian(joint_coords)
@@ -139,7 +142,11 @@ def motor_control():
             # safety interlock
             if (LB and RB) or autonomous_mode:
                 if YB:
+                    with input_lock:
+                        input_mode = True
                     speed = float(input("Enter speed multiplier (1, 2, 4x): "))
+                    with input_lock:
+                        input_mode = False
                     autonomous_mode = True
                     cycle_count = 0
                     feed_forward_velocity = np.zeros((3,))
@@ -285,7 +292,7 @@ def camera_server():
 # Camera Server Thread
 ## ----------------------------------------------------------------------------------------------------
 def pose_handler():
-    global pose_queue, FK_num, T_world_tag, running
+    global pose_queue, FK_num, T_world_tag, running, input_mode
 
     T_ee_cam = np.array([[0, -0.984808, -0.173648, 0.045404],
                          [1, 0, 0, -0.00705],
@@ -337,7 +344,9 @@ def pose_handler():
                 cos_theta = np.dot(y_cam_in_tag, z_tag)
                 angle_rad = np.arccos(np.clip(np.abs(cos_theta), -1.0, 1.0))
                 angle_deg = np.degrees(angle_rad)
-                print(f"Camera/tag angle: {angle_deg:.2f} deg")
+                with input_lock:
+                    if not input_mode:
+                        print(f"Camera/tag angle: {angle_deg:.2f} deg")
 
                 T_tag_15 = tag_to_15_transforms.get(tag_id, np.eye(4))
                 T_cam_15_best = T_cam_tag @ T_tag_15
