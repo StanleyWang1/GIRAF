@@ -2,12 +2,13 @@ import numpy as np
 
 def generate_square_xy_trajectory():
     z = -0.2  # Constant height
+    offset = np.array([-0.00757, -0.00202, -0.00403])  # Offset to shift the square in space
 
     # Define square corners in clockwise or counterclockwise order
-    p1 = np.array([-0.25,  -0.05, z])
-    p2 = np.array([-0.15,  -0.05, z])
-    p3 = np.array([-0.15,   0.05, z])
-    p4 = np.array([-0.25,   0.05, z])
+    p1 = np.array([-0.25,  -0.05, z]) + offset
+    p2 = np.array([-0.15,  -0.05, z]) + offset
+    p3 = np.array([-0.15,   0.05, z]) + offset
+    p4 = np.array([-0.25,   0.05, z]) + offset
     # z = 0.25  # Constant height
 
     # z = 0.25
