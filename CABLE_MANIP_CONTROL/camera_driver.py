@@ -105,19 +105,21 @@ def run_camera_server(params=None, output_queue=None):
                 tags = detector.detect(gray)
 
                 if tags:
-                    for tag in tags:
-                        rvec, tvec, weight = estimate_pose(tag, intrinsics, TAG_SIZE)
-                        if rvec is not None:
-                            draw_pose(frame, rvec, tvec)
-                            for pt in tag.corners:
-                                cv2.circle(frame, tuple(map(int, pt)), 5, (0, 255, 0), -1)
+                    # Find the tag with the lowest id
+                    min_tag = min(tags, key=lambda t: t.tag_id)
+                    tag = min_tag
+                    rvec, tvec, weight = estimate_pose(tag, intrinsics, TAG_SIZE)
+                    if rvec is not None:
+                        draw_pose(frame, rvec, tvec)
+                        for pt in tag.corners:
+                            cv2.circle(frame, tuple(map(int, pt)), 5, (0, 255, 0), -1)
 
-                            pose_list.append({
-                                "id": tag.tag_id,
-                                "rvec": rvec.ravel().tolist(),
-                                "tvec": tvec.ravel().tolist(),
-                                "weight": weight
-                            })
+                        pose_list.append({
+                            "id": tag.tag_id,
+                            "rvec": rvec.ravel().tolist(),
+                            "tvec": tvec.ravel().tolist(),
+                            "weight": weight
+                        })
 
                 # Send full list of tag poses to the output queue
                 if output_queue is not None:
