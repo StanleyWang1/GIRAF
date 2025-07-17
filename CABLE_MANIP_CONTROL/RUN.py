@@ -6,9 +6,9 @@ import cv2
 
 from camera_driver import run_camera_server
 from control_table import MOTOR11_HOME, MOTOR12_HOME, MOTOR13_HOME, MOTOR14_OPEN, MOTOR14_CLOSED
-from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disconnect, radians_to_ticks
+from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_boom_meters, dynamixel_disconnect, radians_to_ticks
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
-from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect, dynamixel_boom_meters
+from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
 from kinematic_model import num_jacobian, num_forward_kinematics
 
 # from new_cable_traj import trajectory
