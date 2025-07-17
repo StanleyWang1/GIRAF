@@ -8,7 +8,7 @@ from camera_driver import run_camera_server
 from control_table import MOTOR11_HOME, MOTOR12_HOME, MOTOR13_HOME, MOTOR14_OPEN, MOTOR14_CLOSED
 from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disconnect, radians_to_ticks
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
-from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
+from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect, dynamixel_boom_meters
 from kinematic_model import num_jacobian, num_forward_kinematics
 
 # from new_cable_traj import trajectory
@@ -219,7 +219,7 @@ def motor_control():
 
                         with FK_num_lock:
                             EE_pose = FK_num[:3, 3]
-                        P_velocity = 3.0 * (target_pose - EE_pose) + feed_forward_velocity/0.01 # move towards target pose
+                        P_velocity = 3.0 * (target_pose - EE_pose) + 0.25*speed*feed_forward_velocity/0.01 # move towards target pose
                         P_velocity = np.clip(P_velocity, -0.5, 0.5) # set velocity limits
                         with velocity_lock:
                             velocity[0] = P_velocity[0] # X velocity
@@ -247,6 +247,8 @@ def motor_control():
             pitch_pos = pitch_pos + 0.0075*joint_velocity[1, 0]
             d3_pos = d3_pos + 0.0075*joint_velocity[2, 0]
 
+            # d3_real = dynamixel_boom_meters(dmx_controller) # read boom length from encoder
+            
             boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
             # print(boom_pos)
 
@@ -289,7 +291,7 @@ def camera_server():
     run_camera_server(params=params, output_queue=pose_queue)
 
 ## ----------------------------------------------------------------------------------------------------
-# Camera Server Thread
+# Visual Servoing Thread
 ## ----------------------------------------------------------------------------------------------------
 def pose_handler():
     global pose_queue, FK_num, T_world_tag, running, input_mode
