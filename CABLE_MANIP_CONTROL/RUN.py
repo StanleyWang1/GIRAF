@@ -99,8 +99,8 @@ def motor_control():
     pitch_pos = 0
     d3_pos = (55+255+80)/1000
     boom_pos = 0
-    theta4_pos = np.deg2rad(60)
-    theta5_pos = 0
+    theta4_pos = 0
+    theta5_pos = np.pi/2
     theta6_pos = 0
     gripper_pos = MOTOR14_OPEN # already in ticks!
 
