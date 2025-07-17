@@ -12,11 +12,11 @@ from motor_driver import motor_connect, motor_status, motor_drive, motor_disconn
 from kinematic_model import num_jacobian, num_forward_kinematics
 
 # from new_cable_traj import trajectory
-from square_traj import trajectory
+# from square_traj import trajectory
 
-# import pandas as pd
-# trajectory_df = pd.read_csv("STANLEY_CONVERTED2TABLE.csv")  # Replace with actual path
-# trajectory = trajectory_df[["x", "y", "z"]].values  # Convert to numpy array of shape (N, 3)
+import pandas as pd
+trajectory_df = pd.read_csv("STANLEY_CONVERTED2TABLE.csv")  # Replace with actual path
+trajectory = trajectory_df[["x", "y", "z"]].values  # Convert to numpy array of shape (N, 3)
 
 ## ----------------------------------------------------------------------------------------------------
 # Joystick Controller Teleoperation
@@ -193,16 +193,16 @@ def motor_control():
                         x, y, z = trajectory[-1]
                         waypoint_id = 0 # loop back to start
                         cycle_count += 1
-                        if cycle_count >= 20:
-                            autonomous_mode = False
+                        # if cycle_count >= 20:
+                        autonomous_mode = False
                         with velocity_lock:
                             velocity = np.zeros((6, 1))
                             gripper_velocity = 0
                         print(f"\033[93mTELEOP: Completed {cycle_count} cycles!\033[0m")
 
-                    T_tag_target = np.array([[1, 0, 0, -0.3],
-                                            [0, 1, 0, 0],
-                                            [0, 0, 1, -0.3],
+                    T_tag_target = np.array([[1, 0, 0, x],
+                                            [0, 1, 0, y],
+                                            [0, 0, 1, z],
                                             [0, 0, 0, 1]])
                     
                     # Update tag pose if available
@@ -219,7 +219,7 @@ def motor_control():
 
                         with FK_num_lock:
                             EE_pose = FK_num[:3, 3]
-                        P_velocity = 3.0 * (target_pose - EE_pose)# + 0.25*speed*feed_forward_velocity/0.01 # move towards target pose
+                        P_velocity = 3.0 * (target_pose - EE_pose) + 0.25*speed*feed_forward_velocity/0.01 # move towards target pose
                         P_velocity = np.clip(P_velocity, -0.5, 0.5) # set velocity limits
                         with velocity_lock:
                             velocity[0] = P_velocity[0] # X velocity
