@@ -39,6 +39,7 @@ input_mode = False
 input_lock = threading.Lock()
 
 running = True
+autonomous_mode = False
 running_lock = threading.Lock()
 
 pose_queue = queue.Queue(maxsize=1)
@@ -65,7 +66,7 @@ def joystick_monitor():
 # Motor Control Thread
 ## ----------------------------------------------------------------------------------------------------
 def motor_control():
-    global joystick_data, velocity, FK_num, T_world_tag, running, input_mode
+    global joystick_data, velocity, FK_num, T_world_tag, running, autonomous_mode, input_mode
 
     def inverse_jacobian(joint_coords):
         J = num_jacobian(joint_coords)
@@ -113,7 +114,7 @@ def motor_control():
     print("\033[93mTELEOP: Motors Connected!\033[0m")
 
     tag_read = False
-    autonomous_mode = False
+    # autonomous_mode = False
     waypoint_id = 0
     T_world_tag_temp = np.zeros((4, 4))
     T_world_tag_latest = np.zeros((4, 4))
@@ -149,14 +150,15 @@ def motor_control():
                     speed = float(input("Enter speed multiplier (1, 2, 4x): "))
                     with input_lock:
                         input_mode = False
-                    autonomous_mode = True
+                        autonomous_mode = True
                     cycle_count = 0
                     feed_forward_velocity = np.zeros((3,))
                     # Y BUTTON -- enter autonomous mode!
 
                 elif LY or LX or RY or RX or LT or RT or AB or BB: # manual control  
                     tag_read = False
-                    autonomous_mode = False
+                    with input_lock:
+                        autonomous_mode = False
                     waypoint_id = 0.0
 
                     with velocity_lock:
@@ -196,7 +198,8 @@ def motor_control():
                         waypoint_id = 0 # loop back to start
                         cycle_count += 1
                         # if cycle_count >= 20:
-                        autonomous_mode = False
+                        with input_lock:
+                            autonomous_mode = False
                         with velocity_lock:
                             velocity = np.zeros((6, 1))
                             gripper_velocity = 0
@@ -336,7 +339,7 @@ def pose_handler():
                 # best_pose = min(pose_list, key=lambda pose: pose.get("id", 16))
                 best_pose = pose_list[0] # first element
                 tag_id = best_pose["id"]
-                print(tag_id)
+                # print(tag_id)
 
                 rvec = np.array(best_pose["rvec"]).reshape(3, 1)
                 tvec = np.array(best_pose["tvec"]).reshape(3, 1)
@@ -384,7 +387,7 @@ def pose_handler():
 # Debug Logger Thread
 ## ----------------------------------------------------------------------------------------------------
 def debug_logger():
-    global running
+    global running, autonomous_mode
     import csv
     from datetime import datetime
 
@@ -396,7 +399,7 @@ def debug_logger():
         writer = csv.writer(f)
         writer.writerow(["timestamp", "d3_pos", "d3_real"])  # Header
 
-        while running or not log_queue.empty():
+        while autonomous_mode and not log_queue.empty():
             try:
                 entry = log_queue.get(timeout=0.5)
                 buffer.append(entry)
