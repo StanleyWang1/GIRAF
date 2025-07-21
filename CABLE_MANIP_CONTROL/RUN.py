@@ -226,7 +226,7 @@ def motor_control():
 
                         with FK_num_lock:
                             EE_pose = FK_num[:3, 3]
-                        P_velocity = 3.0 * (target_pose - EE_pose) + 0.25*speed*feed_forward_velocity/0.01 # move towards target pose
+                        P_velocity = 3.0 * (target_pose - EE_pose) + 0.75*speed*feed_forward_velocity/0.01 # move towards target pose
                         P_velocity = np.clip(P_velocity, -0.5, 0.5) # set velocity limits
                         with velocity_lock:
                             velocity[0] = P_velocity[0] # X velocity
@@ -268,7 +268,7 @@ def motor_control():
 
             roll_pos = roll_pos + 0.0075*joint_velocity[0, 0]
             pitch_pos = pitch_pos + 0.0075*joint_velocity[1, 0]
-            d3_pos = d3_pos + 0.0075*joint_velocity[2, 0] #+ 0.25*d3_dot_sum + 0.0075*(joint_velocity[2, 0] - d3_dot_real)
+            d3_pos = d3_pos + 0.0075*joint_velocity[2, 0] + 0.25*d3_dot_sum + 0.0075*(joint_velocity[2, 0] - d3_dot_real)
             log_queue.put([time.time()-start_time, d3_pos, d3_real])
 
             boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
