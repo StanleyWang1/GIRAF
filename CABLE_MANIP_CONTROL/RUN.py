@@ -395,11 +395,18 @@ def debug_logger():
     batch_size = 100  # Adjust as needed
     log_file = f"boom_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
 
+    while True: # block until autonomous mode is set
+        with input_lock:
+            if autonomous_mode:
+                break
+        time.sleep(0.1)
+        
+    print("\033[93mLOG: Debug Logger Started!\033[0m")
     with open(log_file, mode='w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(["timestamp", "d3_pos", "d3_real"])  # Header
 
-        while autonomous_mode and not log_queue.empty():
+        while running or not log_queue.empty():
             try:
                 entry = log_queue.get(timeout=0.5)
                 buffer.append(entry)
