@@ -359,7 +359,7 @@ def pose_handler():
                 angle_deg = np.degrees(angle_rad)
                 with input_lock:
                     if not input_mode:
-                        # print(f"Camera/tag angle: {angle_deg:.2f} deg")
+                        print(f"Camera/tag angle: {angle_deg:.2f} deg")
                         pass
 
                 T_tag_15 = tag_to_15_transforms.get(tag_id, np.eye(4))
@@ -400,7 +400,7 @@ def debug_logger():
             if autonomous_mode:
                 break
         time.sleep(0.1)
-        
+
     print("\033[93mLOG: Debug Logger Started!\033[0m")
     with open(log_file, mode='w', newline='') as f:
         writer = csv.writer(f)
