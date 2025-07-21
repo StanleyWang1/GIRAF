@@ -262,13 +262,13 @@ def motor_control():
                 if not hasattr(motor_control, "d3_dot_history"):
                     motor_control.d3_dot_history = []
                 motor_control.d3_dot_history.append(joint_velocity[2, 0] - d3_dot_real)
-                if len(motor_control.d3_dot_history) > 50:
+                if len(motor_control.d3_dot_history) > 10:
                     motor_control.d3_dot_history.pop(0)
                 d3_dot_sum = sum(motor_control.d3_dot_history) * 0.0075
 
             roll_pos = roll_pos + 0.0075*joint_velocity[0, 0]
             pitch_pos = pitch_pos + 0.0075*joint_velocity[1, 0]
-            d3_pos = d3_pos + 0.0075*joint_velocity[2, 0] + 0.05*d3_dot_sum
+            d3_pos = d3_pos + 0.0075*joint_velocity[2, 0] + 0.2*d3_dot_sum
             log_queue.put([time.time()-start_time, d3_pos, d3_real])
 
             boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
