@@ -11,12 +11,12 @@ from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
 from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
 from kinematic_model import num_jacobian, num_forward_kinematics
 
-# from new_cable_traj import trajectory
-# from square_traj import trajectory
+from new_cable_traj import trajectory
+from square_traj import trajectory
 
-import pandas as pd
-trajectory_df = pd.read_csv("STANLEY_CONVERTED2TABLE.csv")  # Replace with actual path
-trajectory = trajectory_df[["x", "y", "z"]].values  # Convert to numpy array of shape (N, 3)
+# import pandas as pd
+# trajectory_df = pd.read_csv("STANLEY_CONVERTED2TABLE.csv")  # Replace with actual path
+# trajectory = trajectory_df[["x", "y", "z"]].values  # Convert to numpy array of shape (N, 3)
 
 ## ----------------------------------------------------------------------------------------------------
 # Joystick Controller Teleoperation
@@ -42,6 +42,7 @@ running = True
 running_lock = threading.Lock()
 
 pose_queue = queue.Queue(maxsize=1)
+log_queue = queue.Queue()
 
 ## ----------------------------------------------------------------------------------------------------
 # Joystick Monitoring Thread
@@ -118,6 +119,7 @@ def motor_control():
     T_world_tag_latest = np.zeros((4, 4))
     
     try:
+        start_time = time.time()
         while running:
             # unpack joystick data from dict
             with joystick_lock:
@@ -247,8 +249,10 @@ def motor_control():
             pitch_pos = pitch_pos + 0.0075*joint_velocity[1, 0]
             d3_pos = d3_pos + 0.0075*joint_velocity[2, 0]
 
-            # d3_real = dynamixel_boom_meters(dmx_controller) # read boom length from encoder
-            
+            # Debug Logging Boom Length
+            d3_real = dynamixel_boom_meters(dmx_controller) # read boom length from encoder
+            log_queue.put([time.time()-start_time, d3_pos, d3_real])
+
             boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
             # print(boom_pos)
 
@@ -396,14 +400,46 @@ def pose_handler():
             continue
         time.sleep(0.01)
 
+## ----------------------------------------------------------------------------------------------------
+# Debug Logger Thread
+## ----------------------------------------------------------------------------------------------------
+def debug_logger():
+    global running
+    import csv
+    from datetime import datetime
+
+    buffer = []
+    batch_size = 100  # Adjust as needed
+    log_file = f"boom_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+    with open(log_file, mode='w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(["timestamp", "d3_pos", "d3_real"])  # Header
+
+        while running or not log_queue.empty():
+            try:
+                entry = log_queue.get(timeout=0.5)
+                buffer.append(entry)
+                if len(buffer) >= batch_size:
+                    writer.writerows(buffer)
+                    buffer.clear()
+            except queue.Empty:
+                continue
+        
+        # Write remaining entries on shutdown
+        if buffer:
+            writer.writerows(buffer)
+
 camera_thread = threading.Thread(target=camera_server, daemon=True)
 pose_thread = threading.Thread(target=pose_handler, daemon=True)
 joystick_thread = threading.Thread(target=joystick_monitor, daemon=True)
 motor_thread = threading.Thread(target=motor_control, daemon=True)
+logger_thread = threading.Thread(target=debug_logger, daemon=True)
 
 camera_thread.start()
 pose_thread.start()
 joystick_thread.start()
+logger_thread.start()
 motor_thread.start()
 
 # Keep main thread alive
