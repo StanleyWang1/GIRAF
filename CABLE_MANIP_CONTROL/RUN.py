@@ -101,6 +101,7 @@ def motor_control():
     pitch_pos = 0
     d3_pos = (55+255+80)/1000
     d3_real = 0
+    d3_dot_sum = 0
     boom_pos = 0
     theta4_pos = 0
     theta5_pos = 0
@@ -257,10 +258,11 @@ def motor_control():
                 d3_prev = d3_real
                 d3_real = dynamixel_boom_meters(dmx_controller) # read boom length from encoder
                 d3_dot_real = (d3_real - d3_prev) / 0.0075 # compute velocity
+                d3_dot_sum += (joint_velocity[2, 0] - d3_dot_real) * 0.0075
 
             roll_pos = roll_pos + 0.0075*joint_velocity[0, 0]
             pitch_pos = pitch_pos + 0.0075*joint_velocity[1, 0]
-            d3_pos = d3_pos + 0.0075*joint_velocity[2, 0] + 0.0075*(joint_velocity[2, 0] - d3_dot_real)
+            d3_pos = d3_pos + 0.0075*joint_velocity[2, 0] + d3_dot_sum
             log_queue.put([time.time()-start_time, d3_pos, d3_real])
 
             boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
