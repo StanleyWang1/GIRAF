@@ -250,9 +250,13 @@ def motor_control():
             joint_velocity = Jv_inv @ velocity
 
             # Dynamixel Boom Encoder Read
-            d3_prev = d3_real
-            d3_real = dynamixel_boom_meters(dmx_controller) # read boom length from encoder
-            d3_dot_real = (d3_real - d3_prev) / 0.0075 # compute velocity
+            if d3_real == 0: # first run
+                d3_dot_real = 0
+                d3_real = dynamixel_boom_meters(dmx_controller) # read boom length from encoder
+            else:
+                d3_prev = d3_real
+                d3_real = dynamixel_boom_meters(dmx_controller) # read boom length from encoder
+                d3_dot_real = (d3_real - d3_prev) / 0.0075 # compute velocity
 
             roll_pos = roll_pos + 0.0075*joint_velocity[0, 0]
             pitch_pos = pitch_pos + 0.0075*joint_velocity[1, 0]
