@@ -6,11 +6,19 @@ import time
 
 def get_camera_intrinsics(device):
     # Alternatively, use actual calibration:
-    # calib = device.readCalibration()
-    # return np.array(calib.getCameraIntrinsics(dai.CameraBoardSocket.RGB, 640, 480))
-    return np.array([[704.584, 0.0,     325.885],
-                     [0.0,    704.761, 245.785],
-                     [0.0,    0.0,     1.0]])
+        # calib = device.readCalibration()
+        # return np.array(calib.getCameraIntrinsics(dai.CameraBoardSocket.RGB, 640, 480))
+    # MATLAB Calibration:
+        # return np.array([[704.584, 0.0,     325.885],
+        #                  [0.0,    704.761, 245.785],
+        #                  [0.0,    0.0,     1.0]])
+    # OpenCV Calibration:
+    return np.array([[689.31326763, 0.0, 326.24435805],
+                     [0.0, 687.91253208, 245.33734652],
+                     [0.0, 0.0, 1.0]])
+
+def get_camera_distortion():
+    return np.array([ 2.44017168e-01, -1.76348449e+00, -2.33728618e-03, -1.30995964e-03, 5.22669668e+00])
 
 def draw_pose(frame, rvec, tvec):
     text = f"T: {tvec.ravel()}\nR: {rvec.ravel()}"
@@ -26,7 +34,7 @@ def draw_fps(frame, fps):
     cv2.putText(frame, text, (text_x, text_y),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
 
-def estimate_pose(tag, camera_matrix, tag_size):
+def estimate_pose(tag, camera_matrix, dist_coeffs, tag_size):
     object_pts = np.array([
         [-tag_size/2, -tag_size/2, 0],
         [ tag_size/2, -tag_size/2, 0],
@@ -34,7 +42,7 @@ def estimate_pose(tag, camera_matrix, tag_size):
         [-tag_size/2,  tag_size/2, 0]
     ], dtype=np.float32)
     image_pts = np.array(tag.corners, dtype=np.float32)
-    success, rvec, tvec = cv2.solvePnP(object_pts, image_pts, camera_matrix, None)
+    success, rvec, tvec = cv2.solvePnP(object_pts, image_pts, camera_matrix, dist_coeffs)
 
     if not success:
         return None, None, None
@@ -84,6 +92,8 @@ def run_camera_server(params=None, output_queue=None):
 
     with dai.Device(pipeline) as device:
         intrinsics = get_camera_intrinsics(device)
+        dist = get_camera_distortion()
+
         rgb_queue = device.getOutputQueue(name="rgb", maxSize=1, blocking=True)
 
         prev_time = time.time()
@@ -110,7 +120,7 @@ def run_camera_server(params=None, output_queue=None):
                     # Find the tag with the lowest id
                     min_tag = min(tags, key=lambda t: tag_hierarchy.get(t.tag_id))
                     tag = min_tag
-                    rvec, tvec, weight = estimate_pose(tag, intrinsics, TAG_SIZE)
+                    rvec, tvec, weight = estimate_pose(tag, intrinsics, dist, TAG_SIZE)
                     if rvec is not None:
                         draw_pose(frame, rvec, tvec)
                         for pt in tag.corners:

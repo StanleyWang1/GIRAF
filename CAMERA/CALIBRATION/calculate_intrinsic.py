@@ -7,6 +7,7 @@ import os
 image_dir = './CAMERA/CALIBRATION/DATA'
 chessboard_size = (8, 5)  # number of inner corners (columns, rows)
 square_size = 9.56/1000  # in m
+# square_size = 1.0
 
 # --- Prepare object points ---
 objp = np.zeros((chessboard_size[0] * chessboard_size[1], 3), np.float32)
@@ -61,7 +62,17 @@ if len(objpoints) < 3:
     print("❌ Not enough valid checkerboards detected. At least 3 are recommended.")
     exit()
 
-ret, K, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+# flags = cv2.CALIB_RATIONAL_MODEL
+flags = 0
+ret, K, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None, flags=flags)
+
+# --- Compute and print full projection matrix ---
+# Use the first rotation and translation vectors
+R, _ = cv2.Rodrigues(rvecs[0])
+t = tvecs[0].reshape(3, 1)
+Rt = np.hstack((R, t))
+P = K @ Rt
+print("Full Projection Matrix (P):\n", P)
 
 # --- Output ---
 print("\n✅ Calibration successful!")
