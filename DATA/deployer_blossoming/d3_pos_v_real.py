@@ -4,7 +4,7 @@ import numpy as np
 from scipy.ndimage import median_filter
 
 # Load CSV
-df = pd.read_csv("./DATA/deployer_blossoming/boom_log_20250721_161237.csv")  # Replace with your actual filename
+df = pd.read_csv("./DATA/deployer_blossoming/boom_log_20250721_162744_25ff.csv")  # Replace with your actual filename
 
 # Trim time between 50 and 200 seconds
 df = df[(df["timestamp"] >= 50) & (df["timestamp"] <= 200)].copy()
