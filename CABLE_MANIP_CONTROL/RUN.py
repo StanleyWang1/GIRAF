@@ -225,12 +225,9 @@ def motor_control():
                         target_pose = T_world_target[:3, 3]
 
                         # transform feedforward velocity to world frame
-                        R_world_target = T_world_target[:3, :3]
-                        feed_forward_velocity = R_world_target @ feed_forward_velocity
-
                         with FK_num_lock:
                             EE_pose = FK_num[:3, 3]
-                        P_velocity = 3.0 * (target_pose - EE_pose) + 0.75*speed*feed_forward_velocity/0.01 # move towards target pose
+                        P_velocity = 3.0 * (target_pose - EE_pose) + speed/0.01 * (T_world_target[:3, :3]@feed_forward_velocity) # move towards target pose
                         P_velocity = np.clip(P_velocity, -0.5, 0.5) # set velocity limits
                         with velocity_lock:
                             velocity[0] = P_velocity[0] # X velocity
