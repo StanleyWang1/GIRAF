@@ -225,8 +225,8 @@ def motor_control():
                         target_pose = T_world_target[:3, 3]
 
                         # transform feedforward velocity to world frame
-                        feed_forward_vel_full = T_world_target @ np.append(feed_forward_velocity, 1)
-                        feed_forward_velocity = feed_forward_vel_full[:3, 3]
+                        R_world_target = T_world_target[:3, :3]
+                        feed_forward_velocity = R_world_target @ feed_forward_velocity
 
                         with FK_num_lock:
                             EE_pose = FK_num[:3, 3]
