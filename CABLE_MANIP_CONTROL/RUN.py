@@ -272,7 +272,7 @@ def motor_control():
             log_queue.put([time.time()-start_time, d3_pos, d3_real])
 
             boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
-            print(boom_pos)
+            # print(boom_pos)
 
             theta4_pos = theta4_pos + 0.0075*joint_velocity[3, 0]
             theta5_pos = theta5_pos + 0.0075*joint_velocity[4, 0]
@@ -374,7 +374,7 @@ def pose_handler():
                 angle_deg = np.degrees(angle_rad)
                 with input_lock:
                     if not input_mode and not autonomous_mode:
-                        # print(f"Camera/tag angle: {angle_deg:.2f} deg")
+                        print(f"Camera/tag angle: {angle_deg:.2f} deg")
                         pass
 
                 T_tag_15 = tag_to_15_transforms.get(tag_id, np.eye(4))
