@@ -1,12 +1,12 @@
 import numpy as np
 
-# hello = np.ones(3, dtype=np.float32)
-# hello2 = hello
-# hello *= 2
+hello = np.ones(3, dtype=np.float32)
+hello2 = hello
+hello *= 2
 
-# hello = np.ones(3, dtype=np.float32)
-# hello2 = hello.copy()
-# hello *= 2
+hello = np.ones(3, dtype=np.float32)
+hello2 = hello.copy()
+hello *= 2
 
 hello = np.ones(3, dtype=np.float32)
 hello2 = hello
