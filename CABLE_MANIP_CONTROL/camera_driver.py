@@ -3,6 +3,7 @@ import numpy as np
 import apriltag
 import queue
 import time
+from scipy.spatial.transform import Rotation as R, Slerp
 
 def get_camera_intrinsics(device):
     # Alternatively, use actual calibration:
@@ -57,6 +58,44 @@ def estimate_pose(tag, camera_matrix, dist_coeffs, tag_size):
     weight = 1.0 / (mean_error + epsilon)
 
     return rvec, tvec, weight
+
+def weighted_average_transforms(prev_matrix, new_matrix, weight=0.5):
+    """
+    Compute weighted average of two 4x4 transformation matrices.
+    Args:
+        prev_matrix (np.ndarray): Previous 4x4 transform matrix.
+        new_matrix (np.ndarray): New 4x4 transform matrix.
+        weight (float): Weight for new_matrix; in [0,1].
+                        0 returns prev_matrix, 1 returns new_matrix.
+    Returns:
+        np.ndarray: Averaged 4x4 transform matrix.
+    """
+    prev_matrix = np.array(prev_matrix)
+    new_matrix = np.array(new_matrix)
+
+    # Weighted average of translations
+    prev_trans = prev_matrix[:3, 3]
+    new_trans = new_matrix[:3, 3]
+    avg_trans = (1 - weight) * prev_trans + weight * new_trans
+
+    # Convert rotation parts to Rotation objects
+    prev_rot = R.from_matrix(prev_matrix[:3, :3])
+    new_rot = R.from_matrix(new_matrix[:3, :3])
+
+    # Prepare times and rotations for Slerp
+    key_times = [0, 1]  # Correspond to prev_rot and new_rot
+    key_rots = R.concatenate([prev_rot, new_rot])
+    slerp = Slerp(key_times, key_rots)
+
+    # Interpolate rotation at given weight (time)
+    avg_rot = slerp([weight]).as_matrix()[0]
+
+    # Assemble averaged transform matrix
+    avg_transform = np.eye(4)
+    avg_transform[:3, :3] = avg_rot
+    avg_transform[:3, 3] = avg_trans
+
+    return avg_transform
 
 def run_camera_server(params=None, output_queue=None):
     if params is None:

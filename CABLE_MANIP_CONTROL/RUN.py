@@ -4,7 +4,7 @@ import queue
 import time
 import cv2
 
-from camera_driver import run_camera_server
+from camera_driver import weighted_average_transforms, run_camera_server
 from control_table import MOTOR11_HOME, MOTOR12_HOME, MOTOR13_HOME, MOTOR14_OPEN, MOTOR14_CLOSED
 from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_boom_meters, dynamixel_disconnect, radians_to_ticks
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
@@ -384,7 +384,10 @@ def pose_handler():
                 with FK_num_lock:
                     T_world_ee = FK_num
                 with T_world_tag_lock:
+                    T_world_tag_prev = T_world_tag.copy()
                     T_world_tag = T_world_ee @ T_ee_cam @ T_cam_15_best
+                    # Filter with previous tag pose
+                    T_world_tag = weighted_average_transforms(T_world_tag_prev, T_world_tag, 0.5)
 
                 # Debug printout (pos of EE in tag 15 frame)
                 # T_15_ee = np.linalg.inv(T_ee_cam @ T_cam_15_best)
