@@ -237,7 +237,7 @@ def motor_control():
                             velocity[1] = P_velocity[1] # Y velocity
                             velocity[2] = P_velocity[2] # Z velocity
                             with wrist_tag_angle_lock:
-                                velocity[4] = 0.1 * (75.0 - wrist_tag_angle)
+                                velocity[4] = np.clip(0.05 * (75.0 - wrist_tag_angle), -0.5, 0.5)
 
                 else:
                     with velocity_lock:
