@@ -194,9 +194,9 @@ def motor_control():
                     # Get x,y,z point from loaded trajectory
                     if waypoint_id < len(trajectory):
                         x, y, z = trajectory[int(waypoint_id)]
-                        if waypoint_id > 0:
-                            feed_forward_velocity = trajectory[int(waypoint_id)] - trajectory[int(waypoint_id - 1)]
-                        waypoint_id += speed
+                        # if waypoint_id > 0:
+                        #     feed_forward_velocity = trajectory[int(waypoint_id)] - trajectory[int(waypoint_id - 1)]
+                        # waypoint_id += speed
 
                     else:
                         x, y, z = trajectory[-1]
