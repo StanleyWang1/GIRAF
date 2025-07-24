@@ -194,9 +194,9 @@ def motor_control():
                     # Get x,y,z point from loaded trajectory
                     if waypoint_id < len(trajectory):
                         x, y, z = trajectory[int(waypoint_id)]
-                        # if waypoint_id > 0:
-                        #     feed_forward_velocity = trajectory[int(waypoint_id)] - trajectory[int(waypoint_id - 1)]
-                        # waypoint_id += speed
+                        if waypoint_id > 0:
+                            feed_forward_velocity = trajectory[int(waypoint_id)] - trajectory[int(waypoint_id - 1)]
+                        waypoint_id += speed
 
                     else:
                         x, y, z = trajectory[-1]
@@ -237,7 +237,7 @@ def motor_control():
                             velocity[1] = P_velocity[1] # Y velocity
                             velocity[2] = P_velocity[2] # Z velocity
                             with wrist_tag_angle_lock:
-                                velocity[4] = np.clip(0.05 * (75.0 - wrist_tag_angle), -0.5, 0.5)
+                                velocity[4] = np.clip(0.05 * (60.0 - wrist_tag_angle), -0.5, 0.5)
 
                 else:
                     with velocity_lock:
