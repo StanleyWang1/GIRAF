@@ -385,12 +385,12 @@ def pose_handler():
 
                 with FK_num_lock:
                     T_world_ee = FK_num
+                T_world_tag_new = T_world_ee @ T_ee_cam @ T_cam_15_best
                 with T_world_tag_lock:
                     if T_world_tag is not None:
-                        T_world_tag_prev = T_world_tag.copy()
-                    T_world_tag = T_world_ee @ T_ee_cam @ T_cam_15_best
-                    # Filter with previous tag pose
-                    T_world_tag = weighted_average_transforms(T_world_tag_prev, T_world_tag, 0.5)
+                        T_world_tag = weighted_average_transforms(T_world_tag, T_world_tag_new, 0.5)
+                    else:
+                        T_world_tag = T_world_tag_new
 
                 # Debug printout (pos of EE in tag 15 frame)
                 # T_15_ee = np.linalg.inv(T_ee_cam @ T_cam_15_best)
