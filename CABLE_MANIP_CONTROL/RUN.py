@@ -29,6 +29,9 @@ joystick_lock = threading.Lock()
 velocity = np.zeros((6, 1))
 velocity_lock = threading.Lock()
 
+wrist_tag_angle = 0.0
+wrist_tag_angle_lock = threading.Lock()
+
 FK_num = np.zeros((4, 4))
 FK_num_lock = threading.Lock()
 
@@ -168,7 +171,6 @@ def motor_control():
                         velocity[1] = -0.2*LX # Y velocity
 
                         velocity[4] = 0.5*RY # WY angular velocity
-                        print(velocity[4])
                         velocity[3] = -0.5*RX # WZ angular velocity
 
                     if RT and not LT: # Z up
@@ -234,6 +236,8 @@ def motor_control():
                             velocity[0] = P_velocity[0] # X velocity
                             velocity[1] = P_velocity[1] # Y velocity
                             velocity[2] = P_velocity[2] # Z velocity
+                            with wrist_tag_angle_lock:
+                                velocity[4] = 0.1 * (75.0 - wrist_tag_angle)
 
                 else:
                     with velocity_lock:
@@ -320,7 +324,7 @@ def camera_server():
 # Visual Servoing Thread
 ## ----------------------------------------------------------------------------------------------------
 def pose_handler():
-    global pose_queue, FK_num, T_world_tag, running, input_mode
+    global pose_queue, FK_num, wrist_tag_angle, T_world_tag, running, input_mode
 
     T_ee_cam = np.array([[0, -0.984808, -0.173648, 0.045404],
                          [1, 0, 0, -0.00705],
@@ -375,10 +379,11 @@ def pose_handler():
                 z_tag = np.array([0, 0, 1])  # Tag Z-axis in its own frame
                 cos_theta = np.dot(y_cam_in_tag, z_tag)
                 angle_rad = np.arccos(np.clip(np.abs(cos_theta), -1.0, 1.0))
-                angle_deg = np.degrees(angle_rad)
+                with wrist_tag_angle_lock:
+                    wrist_tag_angle = np.degrees(angle_rad)
                 with input_lock:
                     if not input_mode and not autonomous_mode:
-                        print(f"Camera/tag angle: {angle_deg:.2f} deg")
+                        print(f"Camera/tag angle: {np.degrees(angle_rad):.2f} deg")
                         pass
 
                 T_tag_15 = tag_to_15_transforms.get(tag_id, np.eye(4))
