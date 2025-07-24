@@ -316,7 +316,7 @@ def camera_server():
     global pose_queue, running
     params = {
         "port": 8485,
-        "tag_size": 0.0482  # meters
+        "tag_size": 0.04901  # meters
     }
     run_camera_server(params=params, output_queue=pose_queue)
 
@@ -331,17 +331,18 @@ def pose_handler():
                          [0, -0.173648, 0.984808, -0.076365],
                          [0, 0, 0, 1]])
     # Version 1 Multitag Mount
-    x_dist = 110.0/1000
-    y_dist = 120.0/1000
+    x1_dist = 104.5/1000
+    x2_dist = 110.0/1000
+    y_dist = 119.0/1000
     # x_dist = 106.0/1000
     # y_dist = 106.0/1000
     # x_dist = 73.0/1000
     # y_dist = 79.0/1000
-    tag_to_15_transforms = {11: np.array([[1, 0, 0, 2*x_dist],
+    tag_to_15_transforms = {11: np.array([[1, 0, 0, x1_dist+x2_dist],
                                           [0, 1, 0, y_dist],
                                           [0, 0, 1, 0.0],
                                           [0, 0, 0, 1]]),
-                            12: np.array([[1, 0, 0, x_dist],
+                            12: np.array([[1, 0, 0, x1_dist],
                                           [0, 1, 0, y_dist],
                                           [0, 0, 1, 0.0],
                                           [0, 0, 0, 1]]),
@@ -349,7 +350,7 @@ def pose_handler():
                                           [0, 1, 0, y_dist],
                                           [0, 0, 1, 0.0],
                                           [0, 0, 0, 1]]),
-                            14: np.array([[1, 0, 0, x_dist],
+                            14: np.array([[1, 0, 0, x1_dist],
                                           [0, 1, 0, 0.0],
                                           [0, 0, 1, 0.0],
                                           [0, 0, 0, 1]]),
