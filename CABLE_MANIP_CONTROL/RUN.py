@@ -270,7 +270,9 @@ def motor_control():
             roll_pos = roll_pos + 0.0075*joint_velocity[0, 0]
             pitch_pos = pitch_pos + 0.0075*joint_velocity[1, 0]
             d3_pos = d3_pos + 0.0075*joint_velocity[2, 0] + 0.25*d3_dot_sum + 0.0075*(joint_velocity[2, 0] - d3_dot_real)
-            log_queue.put([time.time()-start_time, d3_pos, d3_real])
+            d3_pos = min(d3_pos, (55+255+80)/1000)
+            
+            # log_queue.put([time.time()-start_time, d3_pos, d3_real])
 
             boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
             # print(boom_pos)
