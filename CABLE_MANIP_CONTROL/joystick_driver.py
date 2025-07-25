@@ -32,8 +32,8 @@ def joystick_read(js):
         "YB": js.get_button(3),
         "LB": js.get_button(4),
         "RB": js.get_button(5),
-        "DPAD_X": hat_x,  # -1 = left, 0 = neutral, 1 = right
-        "DPAD_Y": hat_y  # -1 = down, 0 = neutral, 1 = up
+        "DPADX": hat_x,  # -1 = left, 0 = neutral, 1 = right
+        "DPADY": hat_y  # -1 = down, 0 = neutral, 1 = up
     }
 
 def joystick_disconnect(js):
