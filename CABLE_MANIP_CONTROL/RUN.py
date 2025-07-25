@@ -199,8 +199,8 @@ def motor_control():
                         roll_offset += 0.01
                     elif DPADX == -1:
                         roll_offset -= 0.01
-                    print(roll_offset)
-                    
+                    print(f"DPADX: {DPADX}, Roll offset: {roll_offset:.3f} rad")
+
                 elif autonomous_mode:
                     # Get x,y,z point from loaded trajectory
                     if waypoint_id < len(trajectory):
