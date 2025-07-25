@@ -195,6 +195,7 @@ def motor_control():
                     else:
                         gripper_velocity = 0
                     
+                    print(f"Debug: MENULEFT={MENULEFT}, MENURIGHT={MENURIGHT}, roll_offset={roll_offset:.3f}")
                     if MENULEFT and not MENURIGHT:  
                         roll_offset += 0.01
                     elif MENURIGHT and not MENULEFT:
