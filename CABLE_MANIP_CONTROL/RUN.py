@@ -25,7 +25,7 @@ trajectory = trajectory + offset  # Apply offset to all points
 ## ----------------------------------------------------------------------------------------------------
 
 # Global Variables
-joystick_data = {"LX":0, "LY":0, "RX":0, "RY":0, "LT":0, "RT":0, "AB":0, "BB":0, "XB":0, "YB":0, "LB":0, "RB":0, "DPADX":0, "DPADY":0}
+joystick_data = {"LX":0, "LY":0, "RX":0, "RY":0, "LT":0, "RT":0, "AB":0, "BB":0, "XB":0, "YB":0, "LB":0, "RB":0, "DPADUP":0, "DPADDOWN":0, "DPADLEFT":0, "DPADRIGHT":0}
 joystick_lock = threading.Lock()
 
 velocity = np.zeros((6, 1))
@@ -144,8 +144,8 @@ def motor_control():
                 YB = joystick_data["YB"]
                 LB = joystick_data["LB"]
                 RB = joystick_data["RB"]
-                DPADX = joystick_data["DPADX"]
-                DPADY = joystick_data["DPADY"]
+                DPADLEFT = joystick_data["DPADLEFT"]
+                DPADRIGHT = joystick_data["DPADRIGHT"]
 
             if XB: # stop button engaged - abort process!
                 with running_lock:
@@ -195,11 +195,11 @@ def motor_control():
                     else:
                         gripper_velocity = 0
                     
-                    if DPADX == 1:  
+                    if DPADLEFT == 1:  
                         roll_offset += 0.01
-                    elif DPADX == -1:
+                    elif DPADRIGHT == -1:
                         roll_offset -= 0.01
-                    print(f"DPADX: {DPADX}, Roll offset: {roll_offset:.3f} rad")
+                    print(f"DPADLEFT: {DPADLEFT}, Roll offset: {roll_offset:.3f} rad")
 
                 elif autonomous_mode:
                     # Get x,y,z point from loaded trajectory
