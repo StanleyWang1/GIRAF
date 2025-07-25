@@ -25,7 +25,7 @@ trajectory = trajectory + offset  # Apply offset to all points
 ## ----------------------------------------------------------------------------------------------------
 
 # Global Variables
-joystick_data = {"LX":0, "LY":0, "RX":0, "RY":0, "LT":0, "RT":0, "AB":0, "BB":0, "XB":0, "YB":0, "LB":0, "RB":0}
+joystick_data = {"LX":0, "LY":0, "RX":0, "RY":0, "LT":0, "RT":0, "AB":0, "BB":0, "XB":0, "YB":0, "LB":0, "RB":0, "DPADX":0, "DPADY":0}
 joystick_lock = threading.Lock()
 
 velocity = np.zeros((6, 1))
@@ -103,6 +103,7 @@ def motor_control():
 
     # Joint Coords            
     roll_pos = 0
+    roll_offset = 0
     pitch_pos = 0
     d3_pos = (55+255+80)/1000
     d3_real = 0
@@ -143,6 +144,8 @@ def motor_control():
                 YB = joystick_data["YB"]
                 LB = joystick_data["LB"]
                 RB = joystick_data["RB"]
+                DPADX = joystick_data["DPADX"]
+                DPADY = joystick_data["DPADY"]
 
             if XB: # stop button engaged - abort process!
                 with running_lock:
@@ -191,7 +194,12 @@ def motor_control():
                         gripper_velocity = -20
                     else:
                         gripper_velocity = 0
-
+                    
+                    if DPADX == 1:  
+                        roll_offset += 0.01
+                    elif DPADX == -1:
+                        roll_offset -= 0.01
+                    
                 elif autonomous_mode:
                     # Get x,y,z point from loaded trajectory
                     if waypoint_id < len(trajectory):
@@ -300,7 +308,7 @@ def motor_control():
             
             # check status then drive motors
             motor_status(candle, motors)
-            motor_drive(candle, motors, roll_pos, pitch_pos, boom_pos)
+            motor_drive(candle, motors, roll_pos + roll_offset, pitch_pos, boom_pos)
             dynamixel_drive(dmx_controller, dmx_GSW, [radians_to_ticks(theta4_pos) + MOTOR11_HOME,
                                                       radians_to_ticks(theta5_pos) + MOTOR12_HOME,
                                                       radians_to_ticks(theta6_pos) + MOTOR13_HOME,
