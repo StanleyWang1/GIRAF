@@ -197,9 +197,9 @@ def motor_control():
                     
                     print(f"Debug: MENULEFT={MENULEFT}, MENURIGHT={MENURIGHT}, roll_offset={roll_offset:.3f}")
                     if MENULEFT and not MENURIGHT:  
-                        roll_offset += 0.01
+                        roll_offset += 0.0025
                     elif MENURIGHT and not MENULEFT:
-                        roll_offset -= 0.01
+                        roll_offset -= 0.0025
 
                 elif autonomous_mode:
                     # Get x,y,z point from loaded trajectory
