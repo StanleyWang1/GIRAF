@@ -165,7 +165,7 @@ def motor_control():
                     feed_forward_velocity = np.zeros((3,))
                     # Y BUTTON -- enter autonomous mode!
 
-                elif LY or LX or RY or RX or LT or RT or AB or BB: # manual control  
+                elif LY or LX or RY or RX or LT or RT or AB or BB or MENULEFT or MENURIGHT: # manual control  
                     tag_read = False
                     with input_lock:
                         autonomous_mode = False
