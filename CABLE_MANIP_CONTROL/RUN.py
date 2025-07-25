@@ -103,7 +103,7 @@ def motor_control():
 
     # Joint Coords            
     roll_pos = 0
-    roll_offset = 0
+    roll_offset = 0.0
     pitch_pos = 0
     d3_pos = (55+255+80)/1000
     d3_real = 0
@@ -199,6 +199,7 @@ def motor_control():
                         roll_offset += 0.01
                     elif DPADX == -1:
                         roll_offset -= 0.01
+                    print(roll_offset)
                     
                 elif autonomous_mode:
                     # Get x,y,z point from loaded trajectory
