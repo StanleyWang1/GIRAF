@@ -15,10 +15,8 @@ from kinematic_model import num_jacobian, num_forward_kinematics
 # from square_traj import trajectory
 
 import pandas as pd
-trajectory_df = pd.read_csv("CLIVE_TRAJ.csv")  # Replace with actual path
+trajectory_df = pd.read_csv("CLIVE_TRAJ2.csv")  # Replace with actual path
 trajectory = trajectory_df[["x", "y", "z"]].values  # Convert to numpy array of shape (N, 3)
-offset = np.array([0.00406, 0.012895, 0.075])  # Offset to align with tag center
-trajectory = trajectory + offset  # Apply offset to all points
 
 ## ----------------------------------------------------------------------------------------------------
 # Joystick Controller Teleoperation
@@ -204,7 +202,7 @@ def motor_control():
                         x, y, z = trajectory[-1]
                         waypoint_id = 0 # loop back to start
                         cycle_count += 1
-                        if cycle_count >= 20:
+                        if cycle_count >= 1:
                             with input_lock:
                                 autonomous_mode = False
                             with velocity_lock:
