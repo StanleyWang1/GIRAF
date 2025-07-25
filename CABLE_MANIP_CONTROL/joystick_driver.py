@@ -29,10 +29,8 @@ def joystick_read(js):
         "YB": js.get_button(3),
         "LB": js.get_button(4),
         "RB": js.get_button(5),
-        "DPADUP": js.get_button(6),  # replace with your button numbers
-        "DPADDOWN": js.get_button(7),
-        "DPADLEFT": js.get_button(8),
-        "DPADRIGHT": js.get_button(9)
+        "MENULEFT": js.get_button(6),  # replace with your button numbers
+        "MENURIGHT": js.get_button(7)
     }
 
 def joystick_disconnect(js):
