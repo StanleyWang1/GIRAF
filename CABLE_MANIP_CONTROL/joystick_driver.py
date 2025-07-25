@@ -41,11 +41,11 @@ def joystick_disconnect(js):
 def main():
     js = joystick_connect()
     while True:
-        # data = joystick_read(js)
-        # print(data)
-        print(f"Number of buttons: {js.get_numbuttons()}")
-        for i in range(js.get_numbuttons()):
-            print(f"Button {i}: {js.get_button(i)}")
+        data = joystick_read(js)
+        print(data)
+        # print(f"Number of buttons: {js.get_numbuttons()}")
+        # for i in range(js.get_numbuttons()):
+        #     print(f"Button {i}: {js.get_button(i)}")
 
         time.sleep(0.005)
 
