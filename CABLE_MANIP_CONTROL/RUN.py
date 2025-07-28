@@ -189,11 +189,17 @@ def motor_control():
                             velocity[2] = 0 # no Z velocity
 
                     if AB and not BB: # close
-                        gripper_velocity = 20
+                        # gripper_velocity = 20
+                        with velocity_lock:
+                            velocity[5] = -0.5
                     elif BB and not AB:
-                        gripper_velocity = -20
+                        # gripper_velocity = -20
+                        with velocity_lock:
+                            velocity[5] = 0.5
                     else:
-                        gripper_velocity = 0
+                        # gripper_velocity = 0
+                        with velocity_lock:
+                            velocity[5] = 0.0
                     
                     print(f"Debug: MENULEFT={MENULEFT}, MENURIGHT={MENURIGHT}, roll_offset={roll_offset:.3f}")
                     if MENULEFT and not MENURIGHT:  
