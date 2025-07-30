@@ -9,7 +9,7 @@ import numpy as np
 from utils.metrics import local_max_errors, compute_error_stats
 from utils.plot import plot_task_tube_spheres, plot_task_tube_ellipsoids
 
-EXPERIMENT_NAME = "0721_square_without_kd_ki"
+EXPERIMENT_NAME = "0724_length_72in_speed_10X_45"
 # Paths to robot and goal trajectories
 robot_path = f"data/processed/{EXPERIMENT_NAME}_CONVERTED.csv"
 
@@ -24,8 +24,8 @@ tube_color = "mediumslateblue"
 #plot_path = f"plots/{EXPERIMENT_NAME}_vs_AVG.png"
 
 # Use a separate goal file if needed
-goal_path = "data/goals/OPTIMAL_SQUARE.csv"
-plot_path = f"plots/{EXPERIMENT_NAME}_vs_GOAL.png"
+goal_path = "data/goals/0724_45_OPTIMAL_SQUARE.csv"
+plot_path = f"plots/{EXPERIMENT_NAME}_vs_45GOAL.png"
 
 robot_traj = np.loadtxt(robot_path, delimiter=',')
 goal_traj = np.loadtxt(goal_path, delimiter=',')
