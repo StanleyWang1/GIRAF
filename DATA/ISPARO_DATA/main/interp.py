@@ -158,7 +158,7 @@ _interpolator = RegularGridInterpolator((lengths, speeds, angles), error_data, b
 def get_error(length_m, speed_mmps, angle_deg):
     return _interpolator([[length_m, speed_mmps, angle_deg]])[0]
 
-def plot_circle_with_hemisphere(speed_mmps=50, resolution=25):
+def plot_circle_with_hemisphere(speed_mmps=50, resolution=50):
     r_min, r_max = lengths.min(), lengths.max()
 
     # === Hemisphere ===
@@ -206,10 +206,10 @@ def plot_circle_with_hemisphere(speed_mmps=50, resolution=25):
     radial0 = np.array([[r_min, 0, 0], [r_max, 0, 0]])
     radial90 = np.array([[0, 0, r_min], [0, 0, r_max]])
 
-    ax.plot(arc_outer[:, 0], arc_outer[:, 1], arc_outer[:, 2], color='darkblue', linewidth=2.5)
-    ax.plot(arc_inner[:, 0], arc_inner[:, 1], arc_inner[:, 2], color='darkblue', linewidth=2.5)
-    ax.plot(radial0[:, 0], radial0[:, 1], radial0[:, 2], color='darkblue', linewidth=2.5)
-    ax.plot(radial90[:, 0], radial90[:, 1], radial90[:, 2], color='darkblue', linewidth=2.5)
+    # ax.plot(arc_outer[:, 0], arc_outer[:, 1], arc_outer[:, 2], color='darkblue', linewidth=2.5)
+    # ax.plot(arc_inner[:, 0], arc_inner[:, 1], arc_inner[:, 2], color='darkblue', linewidth=2.5)
+    # ax.plot(radial0[:, 0], radial0[:, 1], radial0[:, 2], color='darkblue', linewidth=2.5)
+    # ax.plot(radial90[:, 0], radial90[:, 1], radial90[:, 2], color='darkblue', linewidth=2.5)
 
     # === Final view and cleanup ===
     ax.view_init(elev=30, azim=315)

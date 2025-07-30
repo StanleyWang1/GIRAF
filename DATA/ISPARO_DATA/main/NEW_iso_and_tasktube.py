@@ -94,7 +94,7 @@ lengths = np.array([0.6, 0.9, 1.2, 1.5, 1.8])
 
 # === Manual colormap bounds ===
 vmin = 0   # in mm
-vmax = 45  # in mm
+vmax = 50  # in mm
 
 # === Load goal trajectory and downsample ===
 # goal_traj = np.loadtxt("data/goals/0723_VERT_OPTIMAL_SQUARE.csv", delimiter=',')
@@ -175,7 +175,12 @@ for i, filename in enumerate(robot_filenames):
     color = colors_for_tubes[i]
     robot_path = os.path.join("data/processed", filename)
     robot_traj = np.loadtxt(robot_path, delimiter=',')
-    radii = local_max_errors(goal_traj, robot_traj)
+    if filename.startswith("0724_length_24in"):
+        
+        radii = local_max_errors(goal_traj24, robot_traj)
+    else:
+          
+        radii = local_max_errors(goal_traj, robot_traj)
 
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111, projection='3d')
@@ -184,13 +189,21 @@ for i, filename in enumerate(robot_filenames):
     ax.view_init(elev=90, azim=-90)
 
     # center = [0.0716353, -0.15443102, -0.27722796]  # vertical center
-    center = [-0.20021098, -0.00074972, -0.27799192] # horizontal data
-    ax.set_xlim([center[0] - 0.056, center[0] + 0.056])
-    ax.set_ylim([center[1] - 0.056, center[1] + 0.056])
-
-    plot_task_tube_spheres(goal_traj, robot_traj, radii, ax=ax,
+    # enter = [-0.20021098, -0.00074972, -0.27799192] # horizontal data
+    # ax.set_xlim([center[0] - 0.056, center[0] + 0.056])
+    # ax.set_ylim([center[1] - 0.056, center[1] + 0.056])
+    if filename.startswith("0724_length_24in"):
+        ax.set_xlim([goal_traj24[:, 0].min() - 0.015, goal_traj24[:, 0].max() + 0.015])
+        ax.set_ylim([goal_traj24[:, 1].min() - 0.015, goal_traj24[:, 1].max() + 0.015])
+        plot_task_tube_spheres(goal_traj24, robot_traj, radii, ax=ax,
                            goal_color='black', robot_color=color, tube_color=color)
-
+    else:
+        ax.set_xlim([goal_traj[:, 0].min() - 0.015, goal_traj[:, 0].max() + 0.015])
+        ax.set_ylim([goal_traj[:, 1].min() - 0.015, goal_traj[:, 1].max() + 0.015])
+        plot_task_tube_spheres(goal_traj, robot_traj, radii, ax=ax,
+                           goal_color='black', robot_color=color, tube_color=color)
+    
+    
     plt.tight_layout()
     save_path = f"plots/individual_tasktube_45_{i+1:02d}.png"
     plt.savefig(save_path, dpi=300)
