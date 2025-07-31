@@ -219,7 +219,7 @@ def motor_control():
                         x, y, z = trajectory[-1]
                         waypoint_id = 0 # loop back to start
                         cycle_count += 1
-                        if cycle_count >= 1:
+                        if cycle_count >= 20:
                             with input_lock:
                                 autonomous_mode = False
                             with velocity_lock:
