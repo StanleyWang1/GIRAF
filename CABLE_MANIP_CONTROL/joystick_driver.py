@@ -40,7 +40,7 @@ def main():
     js = joystick_connect()
     while True:
         data = joystick_read(js)
-        print(data)
+        # print(data)
         # print(f"Number of buttons: {js.get_numbuttons()}")
         # for i in range(js.get_numbuttons()):
         #     print(f"Button {i}: {js.get_button(i)}")
