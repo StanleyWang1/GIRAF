@@ -158,7 +158,7 @@ _interpolator = RegularGridInterpolator((lengths, speeds, angles), error_data, b
 def get_error(length_m, speed_mmps, angle_deg):
     return _interpolator([[length_m, speed_mmps, angle_deg]])[0]
 
-def plot_circle_with_hemisphere(speed_mmps=50, resolution=25):
+def plot_circle_with_hemisphere(speed_mmps=50, resolution=50):
     r_min, r_max = lengths.min(), lengths.max()
 
     # === Hemisphere ===
@@ -174,11 +174,11 @@ def plot_circle_with_hemisphere(speed_mmps=50, resolution=25):
 
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot_surface(x, y, z, color='lightblue', alpha=0.2, edgecolor='none')
+    ax.plot_surface(x, y, z, color='lightblue', alpha=0.1, edgecolor='none')
     ax.plot_surface(x_inner, y_inner, z_inner, color='lightblue', alpha=0.2, edgecolor='none')
 
     # === Gradient quarter circle slice ===
-    cmap = LinearSegmentedColormap.from_list("custom", ["lightseagreen", "orange", "orangered", "deeppink"], N=256)
+    cmap = LinearSegmentedColormap.from_list("custom", ["lightseagreen", "orange", "indianred", "deeppink"], N=256)
     norm = Normalize(vmin=0, vmax=50)
 
     theta_2d = np.linspace(0, np.pi / 2, resolution)
@@ -206,10 +206,10 @@ def plot_circle_with_hemisphere(speed_mmps=50, resolution=25):
     radial0 = np.array([[r_min, 0, 0], [r_max, 0, 0]])
     radial90 = np.array([[0, 0, r_min], [0, 0, r_max]])
 
-    ax.plot(arc_outer[:, 0], arc_outer[:, 1], arc_outer[:, 2], color='darkblue', linewidth=2.5)
-    ax.plot(arc_inner[:, 0], arc_inner[:, 1], arc_inner[:, 2], color='darkblue', linewidth=2.5)
-    ax.plot(radial0[:, 0], radial0[:, 1], radial0[:, 2], color='darkblue', linewidth=2.5)
-    ax.plot(radial90[:, 0], radial90[:, 1], radial90[:, 2], color='darkblue', linewidth=2.5)
+    # ax.plot(arc_outer[:, 0], arc_outer[:, 1], arc_outer[:, 2], color='darkblue', linewidth=2.5)
+    # ax.plot(arc_inner[:, 0], arc_inner[:, 1], arc_inner[:, 2], color='darkblue', linewidth=2.5)
+    # ax.plot(radial0[:, 0], radial0[:, 1], radial0[:, 2], color='darkblue', linewidth=2.5)
+    # ax.plot(radial90[:, 0], radial90[:, 1], radial90[:, 2], color='darkblue', linewidth=2.5)
 
     # === Final view and cleanup ===
     ax.view_init(elev=30, azim=315)
@@ -217,41 +217,11 @@ def plot_circle_with_hemisphere(speed_mmps=50, resolution=25):
     ax.axis('off')
     plt.tight_layout()
     plt.show()
+    return fig
 
 
-# def plot_quarter_circle_for_speed(speed_mmps, resolution=25):
-#     """Plot quarter-circle of interpolated error values for fixed speed"""
-#     theta = np.linspace(0, np.pi / 2, resolution)
-#     radius = np.linspace(lengths.min(), lengths.max(), resolution)
-#     T, R = np.meshgrid(theta, radius)
-#     X = R * np.cos(T)
-#     Y = R * np.sin(T)
-#     angles_deg = np.degrees(T)
-
-#     points = np.stack([R.ravel(), np.full_like(R.ravel(), speed_mmps), angles_deg.ravel()], axis=1)
-#     E = _interpolator(points).reshape(R.shape)
-
-#     fig, ax = plt.subplots(figsize=(6, 6))
-#     cmap = LinearSegmentedColormap.from_list("custom", [
-#         "lightseagreen", "orange", "orangered", "deeppink"
-#     ], N=256)
-#     norm = Normalize(vmin=0, vmax=50)
-#     mesh = ax.pcolormesh(X, Y, E, shading='auto', alpha=0.5, cmap=cmap, norm=norm)
-#     cbar = plt.colorbar(mesh, ax=ax, pad=0.02)
-#     cbar.set_label('95th Percentile Error (mm)', fontsize=12)
-
-#     ax.set_title(f'Quarter Circle Error Plot\nSpeed = {speed_mmps} mm/s', fontsize=14)
-#     ax.set_xlabel('Horizontal (m)')
-#     ax.set_ylabel('Vertical (m)')
-#     ax.axis('equal')
-#     ax.set_xlim(0, lengths.max())
-#     ax.set_ylim(0, lengths.max())
-#     plt.tight_layout()
-#     return fig
-
-
-def plot_quarter_circle_for_speed(speed_mmps, resolution=100):
-    """Plot quarter-circle of interpolated error values for fixed speed with contour lines"""
+def plot_quarter_circle_for_speed(speed_mmps, resolution=50):
+    """Plot quarter-circle of interpolated error values for fixed speed"""
     theta = np.linspace(0, np.pi / 2, resolution)
     radius = np.linspace(lengths.min(), lengths.max(), resolution)
     T, R = np.meshgrid(theta, radius)
@@ -263,37 +233,13 @@ def plot_quarter_circle_for_speed(speed_mmps, resolution=100):
     E = _interpolator(points).reshape(R.shape)
 
     fig, ax = plt.subplots(figsize=(6, 6))
-
-    # === Color map ===
     cmap = LinearSegmentedColormap.from_list("custom", [
-        "lightseagreen",  # teal (low error)
-        "orange",  # yellow (medium)
-        "hotpink"   # red-orange (high error)
+        "lightseagreen", "orange", "indianred", "deeppink"
     ], N=256)
     norm = Normalize(vmin=0, vmax=50)
-
-    # === Main heatmap
     mesh = ax.pcolormesh(X, Y, E, shading='auto', alpha=0.9, cmap=cmap, norm=norm)
-
-    # === Contour lines ===
-    contour_levels = [5, 10, 15, 20, 25, 30, 40, 50]  # adjust as needed
-    contour = ax.contour(X, Y, E, levels=contour_levels, colors='black', linewidths=1.0)
-    ax.clabel(contour, inline=True, fontsize=12, fmt="%d mm")
-
-    # === Colorbar
     cbar = plt.colorbar(mesh, ax=ax, pad=0.02)
     cbar.set_label('95th Percentile Error (mm)', fontsize=12)
-
-    # === Add black outline
-    arc_outer_x = lengths.max() * np.cos(theta)
-    arc_outer_y = lengths.max() * np.sin(theta)
-    arc_inner_x = lengths.min() * np.cos(theta)
-    arc_inner_y = lengths.min() * np.sin(theta)
-
-    ax.plot(arc_outer_x, arc_outer_y, color='darkblue', linewidth=2.5)
-    ax.plot(arc_inner_x, arc_inner_y, color='darkblue', linewidth=2.5)
-    ax.plot([lengths.min(), lengths.max()], [0, 0], color='darkblue', linewidth=2.5)
-    ax.plot([0, 0], [lengths.min(), lengths.max()], color='darkblue', linewidth=2.5)
 
     ax.set_title(f'Quarter Circle Error Plot\nSpeed = {speed_mmps} mm/s', fontsize=14)
     ax.set_xlabel('Horizontal (m)')
@@ -303,6 +249,62 @@ def plot_quarter_circle_for_speed(speed_mmps, resolution=100):
     ax.set_ylim(0, lengths.max())
     plt.tight_layout()
     return fig
+
+
+# def plot_quarter_circle_for_speed(speed_mmps, resolution=100):
+#     """Plot quarter-circle of interpolated error values for fixed speed with contour lines"""
+#     theta = np.linspace(0, np.pi / 2, resolution)
+#     radius = np.linspace(lengths.min(), lengths.max(), resolution)
+#     T, R = np.meshgrid(theta, radius)
+#     X = R * np.cos(T)
+#     Y = R * np.sin(T)
+#     angles_deg = np.degrees(T)
+
+#     points = np.stack([R.ravel(), np.full_like(R.ravel(), speed_mmps), angles_deg.ravel()], axis=1)
+#     E = _interpolator(points).reshape(R.shape)
+
+#     fig, ax = plt.subplots(figsize=(6, 6))
+
+#     # === Color map ===
+#     cmap = LinearSegmentedColormap.from_list("custom", [
+#         "lightseagreen",  # teal (low error)
+#         "orange",  # yellow (medium)
+#         "indianred",  # red (high error)
+#         "deeppink"   # red-orange (high error)
+#     ], N=256)
+#     norm = Normalize(vmin=0, vmax=50)
+
+#     # === Main heatmap
+#     mesh = ax.pcolormesh(X, Y, E, shading='auto', alpha=1, cmap=cmap, norm=norm)
+
+#     # === Contour lines ===
+#     contour_levels = [5, 10, 15, 20, 25, 30, 40, 50]  # adjust as needed
+#     contour = ax.contour(X, Y, E, levels=contour_levels, colors='black', linewidths=1.0)
+#     ax.clabel(contour, inline=True, fontsize=12, fmt="%d mm")
+
+#     # === Colorbar
+#     cbar = plt.colorbar(mesh, ax=ax, pad=0.02)
+#     cbar.set_label('95th Percentile Error (mm)', fontsize=12)
+
+#     # === Add black outline
+#     arc_outer_x = lengths.max() * np.cos(theta)
+#     arc_outer_y = lengths.max() * np.sin(theta)
+#     arc_inner_x = lengths.min() * np.cos(theta)
+#     arc_inner_y = lengths.min() * np.sin(theta)
+
+#     ax.plot(arc_outer_x, arc_outer_y, color='darkblue', linewidth=2.5)
+#     ax.plot(arc_inner_x, arc_inner_y, color='darkblue', linewidth=2.5)
+#     ax.plot([lengths.min(), lengths.max()], [0, 0], color='darkblue', linewidth=2.5)
+#     ax.plot([0, 0], [lengths.min(), lengths.max()], color='darkblue', linewidth=2.5)
+
+#     ax.set_title(f'Quarter Circle Error Plot\nSpeed = {speed_mmps} mm/s', fontsize=14)
+#     ax.set_xlabel('Horizontal (m)')
+#     ax.set_ylabel('Vertical (m)')
+#     ax.axis('equal')
+#     ax.set_xlim(0, lengths.max())
+#     ax.set_ylim(0, lengths.max())
+#     plt.tight_layout()
+#     return fig
 
 
 
