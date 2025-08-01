@@ -15,7 +15,7 @@ from kinematic_model import num_jacobian, num_forward_kinematics
 # from square_traj import trajectory
 
 import pandas as pd
-trajectory_df = pd.read_csv("CLIVE_TRAJ.csv")  # Replace with actual path
+trajectory_df = pd.read_csv("CLIVE_TRAJ_SMOOTH.csv")  # Replace with actual path
 # trajectory_df = pd.read_csv("STAN_TRAJ.csv")  # Replace with actual path
 trajectory = trajectory_df[["x", "y", "z"]].values  # Convert to numpy array of shape (N, 3)
 offset = np.array([0.00406, 0.012895, 0.02])  # Offset to align with tag center
