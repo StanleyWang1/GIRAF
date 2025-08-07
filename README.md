@@ -21,7 +21,13 @@ This repository contains code for control, modeling, and experimentation with a 
 
 - **MODELING**  
   Code for model development and simulation.
+  - `boom_resonance/` — Frequency analysis of free vibrations for deployable boom.
+  - `elastica/` - Elastic boom modeling using Cosserat rod (PyElastica)
+  - `giraf_stance/` — Static and quasi-static stance stability analysis of full GIRAF system with extended boom.
+  - `trajectory_optimization/` — (ARHIVED) speed-variations of d3_dot along trajectory
 
+- **TELEOP**  
+  Code for initial teleoperation and experiments with 6 DoF boom
 ---
 
 Feel free to open an issue or contact us for questions or collaboration.
