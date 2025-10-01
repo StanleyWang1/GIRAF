@@ -1,0 +1,48 @@
+<mujoco model="rrr_arm">
+  <compiler coordinate="local" angle="radian"/>
+  <option gravity="0 0 -9.81" timestep="0.002"/>
+
+  <!-- Defaults: joint spring & damping, and geom appearance -->
+  <default>
+    <joint type="hinge" axis="1 0 0" damping="0.2" stiffness="5" limited="false"/>
+    <geom  type="capsule" size="0.05" rgba="0.7 0.7 0.8 1"/>
+  </default>
+
+  <asset>
+    <texture name="grid" type="2d" builtin="checker" width="512" height="512"
+             rgb1="0.2 0.2 0.2" rgb2="0.3 0.3 0.3"/>
+    <material name="mat" texture="grid" texrepeat="4 4" specular="0.2"/>
+  </asset>
+
+  <worldbody>
+    <!-- Ground (purely visual) -->
+    <geom name="floor" type="plane" pos="0 0 0" size="5 5 0.1" material="mat" rgba="0.8 0.8 0.8 1"/>
+
+    <!-- Link 1: joint at (0,0,0); link extends 1 m along +Y -->
+    <body name="link1" pos="0 0 0">
+      <joint name="j1" pos="0 0 0"/>  <!-- axis = +X from default -->
+      <geom  name="g1" fromto="0 0 0  0 1 0"/>  <!-- capsule 1 m -->
+      <!-- Child at the end of link1 -->
+      <body name="link2" pos="0 1 0">
+        <joint name="j2" pos="0 0 0"/>          <!-- axis = +X -->
+        <geom  name="g2" fromto="0 0 0  0 1 0"/>
+        <!-- Child at the end of link2 -->
+        <body name="link3" pos="0 1 0">
+          <joint name="j3" pos="0 0 0"/>        <!-- axis = +X -->
+          <geom  name="g3" fromto="0 0 0  0 1 0"/>
+          <!-- (Optionally add an end-effector site) -->
+          <site name="ee" pos="0 1 0" size="0.01" rgba="1 0 0 1"/>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <!-- Actuators: we’ll drive only the base joint (j1) from Python.
+       Use a torque motor so Python can implement a PD controller. -->
+  <actuator>
+    <motor name="m1" joint="j1" gear="1.0"/>
+    <!-- Motors for j2 and j3 if you want to control them later -->
+    <motor name="m2" joint="j2" gear="1.0"/>
+    <motor name="m3" joint="j3" gear="1.0"/>
+  </actuator>
+</mujoco>
