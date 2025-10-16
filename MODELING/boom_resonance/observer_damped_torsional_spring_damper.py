@@ -72,6 +72,7 @@ def update_dynamics():
 
     # Control law for the plant (feedback)
     u = u_task - Kd * x_hat[1, 0]
+    # u = u_task
 
     tau = -k_theta * (theta - theta_base) - c_theta * (omega - omega_base) + u
     alpha = tau / J
