@@ -166,9 +166,9 @@ def motor_control():
             pitch_pos = max(min(pitch_pos, np.pi/2), 0)
             boom_pos = max(min(boom_pos, 0), -25)
             gripper_pos = [
-                int(max(min(gripper_pos[0], MOTOR100_CLOSED), MOTOR100_OPEN)),
-                int(max(min(gripper_pos[1], MOTOR101_CLOSED), MOTOR101_OPEN)),
-                int(max(min(gripper_pos[2], MOTOR102_CLOSED), MOTOR102_OPEN))
+                int(min(max(gripper_pos[0], MOTOR100_CLOSED), MOTOR100_OPEN)),
+                int(min(max(gripper_pos[1], MOTOR101_CLOSED), MOTOR101_OPEN)),
+                int(min(max(gripper_pos[2], MOTOR102_CLOSED), MOTOR102_OPEN))
             ]
             
             # check status then drive motors
