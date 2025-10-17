@@ -159,7 +159,9 @@ def motor_control():
             
             theta5_pos = max(theta5_pos, -1.7) # wrist pitch limit
 
-            gripper_pos = gripper_pos + gripper_velocity
+            gripper_pos[0] += gripper_velocity
+            gripper_pos[1] += gripper_velocity
+            gripper_pos[2] += gripper_velocity
 
             # joint limits
             roll_pos = max(min(roll_pos, np.pi/2), -np.pi/2)
