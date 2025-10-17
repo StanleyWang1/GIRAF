@@ -1,7 +1,7 @@
 # HOME POSITIONS (in reference kinematic configuration)
 MOTOR11_HOME = 2044
 MOTOR12_HOME = 3860
-MOTOR13_HOME = 4100
+MOTOR13_HOME = 4160
 
 MOTOR100_OPEN = 254 # fully open
 MOTOR101_OPEN = 3108 # fully open
