@@ -3,7 +3,7 @@ import pyCandle
 import threading
 import time
 
-from control_table import MOTOR11_HOME, MOTOR12_HOME, MOTOR13_HOME, MOTOR14_OPEN, MOTOR14_CLOSED
+from control_table import MOTOR11_HOME, MOTOR12_HOME, MOTOR13_HOME, MOTOR100_OPEN, MOTOR100_CLOSED, MOTOR101_OPEN, MOTOR101_CLOSED, MOTOR102_OPEN, MOTOR102_CLOSED
 from dynamixel_driver import dynamixel_connect, dynamixel_drive, dynamixel_disconnect, radians_to_ticks
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
 from motor_driver import motor_connect, motor_status, motor_drive, motor_disconnect
@@ -82,7 +82,7 @@ def motor_control():
     theta4_pos = 0
     theta5_pos = 0
     theta6_pos = 0
-    gripper_pos = MOTOR14_OPEN # already in ticks!
+    gripper_pos = [MOTOR100_OPEN, MOTOR101_OPEN, MOTOR102_OPEN]
 
     joint_velocity = np.zeros((6,1)) # initialize as zero
     gripper_velocity = 0
@@ -132,9 +132,9 @@ def motor_control():
                         velocity[2] = 0 # no Z velocity
 
                 if AB and not BB: # close
-                    gripper_velocity = 20
-                elif BB and not AB:
-                    gripper_velocity = -20
+                    gripper_velocity = -50
+                elif BB and not AB: # open
+                    gripper_velocity = 50
                 else:
                     gripper_velocity = 0
             else:
@@ -165,7 +165,11 @@ def motor_control():
             roll_pos = max(min(roll_pos, np.pi/2), -np.pi/2)
             pitch_pos = max(min(pitch_pos, np.pi/2), 0)
             boom_pos = max(min(boom_pos, 0), -25)
-            gripper_pos = int(max(min(gripper_pos, MOTOR14_CLOSED), MOTOR14_OPEN))
+            gripper_pos = [
+                int(max(min(gripper_pos[0], MOTOR100_CLOSED), MOTOR100_OPEN)),
+                int(max(min(gripper_pos[1], MOTOR101_CLOSED), MOTOR101_OPEN)),
+                int(max(min(gripper_pos[2], MOTOR102_CLOSED), MOTOR102_OPEN))
+            ]
             
             # check status then drive motors
             motor_status(candle, motors)
@@ -173,7 +177,9 @@ def motor_control():
             dynamixel_drive(dmx_controller, dmx_GSW, [radians_to_ticks(theta4_pos) + MOTOR11_HOME,
                                                       radians_to_ticks(theta5_pos) + MOTOR12_HOME,
                                                       radians_to_ticks(theta6_pos) + MOTOR13_HOME,
-                                                      gripper_pos])
+                                                      gripper_pos[0],
+                                                      gripper_pos[1],
+                                                      gripper_pos[2]])
             time.sleep(0.005)
     finally:
         motor_disconnect(candle)
