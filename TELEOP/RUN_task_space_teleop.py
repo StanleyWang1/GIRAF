@@ -76,6 +76,7 @@ def motor_control():
 
     # Joint Coords            
     roll_pos = 0
+    roll_offset = 0.0
     pitch_pos = 0
     d3_pos = (55+255+80)/1000
     boom_pos = 0
@@ -106,6 +107,8 @@ def motor_control():
                 XB = joystick_data["XB"]
                 LB = joystick_data["LB"]
                 RB = joystick_data["RB"]
+                MENULEFT = joystick_data["MENULEFT"]
+                MENURIGHT = joystick_data["MENURIGHT"]
 
             if XB: # stop button engaged - abort process!
                 with running_lock:
@@ -137,6 +140,11 @@ def motor_control():
                     gripper_velocity = 50
                 else:
                     gripper_velocity = 0
+
+                if MENULEFT and not MENURIGHT:  
+                    roll_offset += 0.0025
+                elif MENURIGHT and not MENULEFT:
+                    roll_offset -= 0.0025
             else:
                 with velocity_lock:
                     velocity = np.zeros((6, 1))
@@ -149,6 +157,9 @@ def motor_control():
             roll_pos = roll_pos + 0.0075*joint_velocity[0, 0]
             pitch_pos = pitch_pos + 0.0075*joint_velocity[1, 0]
             d3_pos = d3_pos + 0.0075*joint_velocity[2, 0]
+
+            # SAFETY LIMIT TO PREVENT d3 control blowup
+            d3_pos = max(d3_pos, (55+255+80)/1000)
 
             boom_pos = get_boom_pos(d3_pos, joint_velocity[2, 0]) # convert linear d3 to motor angle
             print(boom_pos)
@@ -175,7 +186,7 @@ def motor_control():
             
             # check status then drive motors
             motor_status(candle, motors)
-            motor_drive(candle, motors, roll_pos, pitch_pos, boom_pos)
+            motor_drive(candle, motors, roll_pos + roll_offset, pitch_pos, boom_pos)
             dynamixel_drive(dmx_controller, dmx_GSW, [radians_to_ticks(theta4_pos) + MOTOR11_HOME,
                                                       radians_to_ticks(theta5_pos) + MOTOR12_HOME,
                                                       radians_to_ticks(theta6_pos) + MOTOR13_HOME,

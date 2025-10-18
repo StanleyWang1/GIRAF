@@ -15,6 +15,7 @@ def joystick_read(js):
         return 0 if -deadzone < value < deadzone else value
 
     pygame.event.pump()
+
     return {
         "LX": apply_deadzone(js.get_axis(0)),
         "LY": apply_deadzone(js.get_axis(1)),
@@ -25,8 +26,11 @@ def joystick_read(js):
         "AB": js.get_button(0),
         "BB": js.get_button(1),
         "XB": js.get_button(2),
+        "YB": js.get_button(3),
         "LB": js.get_button(4),
         "RB": js.get_button(5),
+        "MENULEFT": js.get_button(6),  # replace with your button numbers
+        "MENURIGHT": js.get_button(7)
     }
 
 def joystick_disconnect(js):
@@ -36,7 +40,11 @@ def main():
     js = joystick_connect()
     while True:
         data = joystick_read(js)
-        print(data)
+        # print(data)
+        # print(f"Number of buttons: {js.get_numbuttons()}")
+        # for i in range(js.get_numbuttons()):
+        #     print(f"Button {i}: {js.get_button(i)}")
+
         time.sleep(0.005)
 
 if __name__ == "__main__":
