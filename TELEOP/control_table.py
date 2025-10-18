@@ -5,7 +5,7 @@ MOTOR13_HOME = 4160
 
 MOTOR100_OPEN = 1910 # fully open
 MOTOR101_OPEN = 1065 # fully open
-MOTOR102_OPEN = 1039 # fully open
+MOTOR102_OPEN = 3200 # fully open
 
 MOTOR100_CLOSED = MOTOR100_OPEN - 4000 # fully closed
 MOTOR101_CLOSED = MOTOR101_OPEN - 4000 # fully closed
