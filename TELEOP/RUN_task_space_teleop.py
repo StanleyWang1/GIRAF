@@ -135,9 +135,9 @@ def motor_control():
                         velocity[2] = 0 # no Z velocity
 
                 if AB and not BB: # close
-                    gripper_velocity = -50
+                    gripper_velocity = -40
                 elif BB and not AB: # open
-                    gripper_velocity = 50
+                    gripper_velocity = 40
                 else:
                     gripper_velocity = 0
 
