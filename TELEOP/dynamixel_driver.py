@@ -40,9 +40,9 @@ def dynamixel_connect():
     controller.WRITE(GRIPPER3, OPERATING_MODE, 4)
 
     # Optional: Force Limit on Gripper
-    controller.WRITE(GRIPPER1, PWM_LIMIT, 300)
-    controller.WRITE(GRIPPER2, PWM_LIMIT, 300)
-    controller.WRITE(GRIPPER3, PWM_LIMIT, 300)
+    controller.WRITE(GRIPPER1, PWM_LIMIT, 200)
+    controller.WRITE(GRIPPER2, PWM_LIMIT, 200)
+    controller.WRITE(GRIPPER3, PWM_LIMIT, 200)
 
     # Torque Enable
     controller.WRITE(JOINT1, TORQUE_ENABLE, 1)
