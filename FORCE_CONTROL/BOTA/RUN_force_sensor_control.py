@@ -16,7 +16,6 @@ import threading
 from force_sensor_driver import ForceSensorDriver
 from dynamixel_driver import (
     dynamixel_connect, dynamixel_drive, dynamixel_disconnect,
-    JOINT1, JOINT2, JOINT3, GRIPPER1, GRIPPER2, GRIPPER3
 )
 from control_table import MOTOR11_HOME, MOTOR12_HOME, MOTOR13_HOME, MOTOR12_MIN, MOTOR12_MAX, TORQUE_ENABLE, PRESENT_POSITION
 
@@ -76,7 +75,7 @@ def motor_thread():
     print("\033[93mTELEOP: Motors Connected!\033[0m")
     time.sleep(0.5)
 
-    dmx_controller.write(11, TORQUE_ENABLE, 1)
+    dmx_controller.write(11, TORQUE_ENABLE, 0)
     try:
         while running:
             current_pos = dmx_controller.read(11, PRESENT_POSITION)
