@@ -25,6 +25,10 @@ This repository contains code for control, modeling, and experimentation with a 
   - `resonance_drop_impulse/` - (ARCHIVED) free vibrations measured by dropping the boom
   - `resonance_step_velocity/` - free vibrations measured by upwards velocity impulse in boom pitch motor
 
+- **FORCE_CONTROL**
+  Code for endpoint force sensing and control
+  - `BOTA/` - BOTA 6-axis FT sensor packages
+
 - **MODELING**  
   Code for model development and simulation.
   - `boom_resonance/` — Frequency analysis of free vibrations for deployable boom.
