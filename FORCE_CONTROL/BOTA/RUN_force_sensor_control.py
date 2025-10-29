@@ -24,7 +24,7 @@ FZ_THRESHOLD_N = -1.0   # spin when Fz < -5 N
 STEP_TICKS     = 10    # how many ticks to add per motor update while spinning
 SENSOR_TIMEOUT = 0.25   # seconds to wait for a new sensor sample in sensor thread
 CTRL_HZ        = 100.0  # motor update rate
-PRINT_HZ       = 5.0    # status print rate
+PRINT_HZ       = 2.0    # status print rate
 TARE_ON_START  = True
 # ========================================================
 
@@ -71,18 +71,39 @@ def sensor_thread():
 def motor_thread():
     global running
     
+    PITCH_MOTOR = 12 
+
     dmx_controller, dmx_GSW = dynamixel_connect()
     print("\033[93mTELEOP: Motors Connected!\033[0m")
     time.sleep(0.5)
 
-    dmx_controller.write(11, TORQUE_ENABLE, 0)
+    dynamixel_drive(dmx_controller, dmx_GSW, [(MOTOR12_MIN + MOTOR12_MAX)/2])
+
+    # Performance benchmarking (loop Hz)
+    loop_count = 0
+    last_time = time.perf_counter()
+    print_interval = 1.0 / PRINT_HZ if PRINT_HZ > 0 else 1.0
+
     try:
         while running:
-            current_pos = dmx_controller.read(11, PRESENT_POSITION)
             with shared_lock:
                 Fz = shared["Fz"]
-            print(f"Current Pos: {current_pos}, Fz: {Fz}")
-            time.sleep(0.1)
+            
+            MOTOR_12_ticks = (MOTOR12_MIN + MOTOR12_MAX)/2 + 100*Fz
+            MOTOR_12_ticks = max(MOTOR12_MIN, min(MOTOR12_MAX, MOTOR_12_ticks))
+            dynamixel_drive(dmx_controller, dmx_GSW, [int(MOTOR_12_ticks)])
+            time.sleep(0.01)
+
+            # perf counting
+            loop_count += 1
+            now = time.perf_counter()
+            elapsed = now - last_time
+            if elapsed >= print_interval:
+                hz = loop_count / elapsed if elapsed > 0 else float('inf')
+                print(f"\033[94m[MOTOR] loop Hz: {hz:.1f}\033[0m")
+                loop_count = 0
+                last_time = now
+
     finally:
         dynamixel_disconnect(dmx_controller)
         print("\033[93mTELEOP: Motors Disconnected!\033[0m")
