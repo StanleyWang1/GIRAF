@@ -15,7 +15,7 @@ MOTOR_IDS = [PITCH_MOTOR]
 
 def dynamixel_connect():
     # Initialize controller
-    controller = DynamixelController('/dev/ttyUSB0', 2000000, 2.0)
+    controller = DynamixelController('/dev/ttyUSB0', 57600, 2.0)
     group_sync_write = GroupSyncWrite(controller.port_handler, controller.packet_handler, GOAL_POSITION[0], GOAL_POSITION[1])
 
     # --------------------------------------------------
@@ -34,13 +34,13 @@ def dynamixel_connect():
 
     # Set Control Mode
     for motor_id in MOTOR_IDS:
-        controller.WRITE(motor_id, OPERATING_MODE, 4)  # extended position control
-        controller.WRITE(motor_id, PROFILE_VELOCITY, 400) # velocity limit
-        controller.WRITE(motor_id, PROFILE_ACCELERATION, 200) # acceleration limit
-        controller.WRITE(motor_id, TORQUE_ENABLE, 1) # torque enable
+        controller.write(motor_id, OPERATING_MODE, 4)  # extended position control
+        controller.write(motor_id, PROFILE_VELOCITY, 400) # velocity limit
+        controller.write(motor_id, PROFILE_ACCELERATION, 100) # acceleration limit
+        controller.write(motor_id, TORQUE_ENABLE, 1) # torque enable
  
     # Optional: Force Limit on Gripper
-    # controller.WRITE(GRIPPER, PWM_LIMIT, 250)
+    # controller.write(GRIPPER, PWM_LIMIT, 250)
 
     return controller, group_sync_write
 
@@ -51,12 +51,12 @@ def dynamixel_drive(controller, group_sync_write, ticks):
     # param_success &= group_sync_write.addParam(GRIPPER, ticks[3].to_bytes(4, 'little', signed=True))
 
     if not param_success:
-        print("Failed to add parameters for SyncWrite")
+        print("Failed to add parameters for Syncwrite")
         return False
 
     dxl_comm_result = group_sync_write.txPacket()
     if dxl_comm_result != COMM_SUCCESS:
-        print(f"SyncWrite communication error: {controller.packet_handler.getTxRxResult(dxl_comm_result)}")
+        print(f"Syncwrite communication error: {controller.packet_handler.getTxRxResult(dxl_comm_result)}")
         return False
 
     group_sync_write.clearParam()
@@ -65,7 +65,7 @@ def dynamixel_drive(controller, group_sync_write, ticks):
 def dynamixel_disconnect(controller):
     # Torque OFF all motors individually (simple)
     for motor_id in MOTOR_IDS:
-        controller.WRITE(motor_id, TORQUE_ENABLE, 0) # torque disable
+        controller.write(motor_id, TORQUE_ENABLE, 0) # torque disable
 
 def radians_to_ticks(rad):
     return int(rad / (2 * np.pi) * 4096)
