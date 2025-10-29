@@ -80,7 +80,9 @@ def motor_thread():
     try:
         while running:
             current_pos = dmx_controller.read(11, PRESENT_POSITION)
-            print(f"Current Pos: {current_pos}")
+            with shared_lock:
+                Fz = shared["Fz"]
+            print(f"Current Pos: {current_pos}, Fz: {Fz}")
             time.sleep(0.1)
     finally:
         dynamixel_disconnect(dmx_controller)
