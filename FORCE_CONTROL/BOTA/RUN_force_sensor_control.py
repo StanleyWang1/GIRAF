@@ -77,7 +77,8 @@ def motor_thread():
     print("\033[93mTELEOP: Motors Connected!\033[0m")
     time.sleep(0.5)
 
-    dynamixel_drive(dmx_controller, dmx_GSW, [(MOTOR12_MIN + MOTOR12_MAX)/2])
+    # HOME_POS = int([(MOTOR12_MIN + MOTOR12_MAX])
+    dynamixel_drive(dmx_controller, dmx_GSW, [int((MOTOR12_MIN + MOTOR12_MAX)/2)])
 
     # Performance benchmarking (loop Hz)
     loop_count = 0
@@ -92,7 +93,7 @@ def motor_thread():
             MOTOR_12_ticks = (MOTOR12_MIN + MOTOR12_MAX)/2 + 100*Fz
             MOTOR_12_ticks = max(MOTOR12_MIN, min(MOTOR12_MAX, MOTOR_12_ticks))
             dynamixel_drive(dmx_controller, dmx_GSW, [int(MOTOR_12_ticks)])
-            time.sleep(0.01)
+            time.sleep(0.001)
 
             # perf counting
             loop_count += 1

@@ -15,7 +15,7 @@ MOTOR_IDS = [PITCH_MOTOR]
 
 def dynamixel_connect():
     # Initialize controller
-    controller = DynamixelController('/dev/ttyUSB0', 57600, 2.0)
+    controller = DynamixelController('/dev/ttyUSB0', 2000000, 2.0)
     group_sync_write = GroupSyncWrite(controller.port_handler, controller.packet_handler, GOAL_POSITION[0], GOAL_POSITION[1])
 
     # --------------------------------------------------
