@@ -18,7 +18,7 @@ from dynamixel_driver import (
     dynamixel_connect, dynamixel_drive, dynamixel_disconnect,
     JOINT1, JOINT2, JOINT3, GRIPPER1, GRIPPER2, GRIPPER3
 )
-from control_table import PRESENT_POSITION  # used to seed ticks on startup
+from control_table import MOTOR11_HOME, MOTOR12_HOME, MOTOR13_HOME, MOTOR12_MIN, MOTOR12_MAX, TORQUE_ENABLE, PRESENT_POSITION
 
 # ===================== User settings =====================
 FZ_THRESHOLD_N = -1.0   # spin when Fz < -5 N
@@ -40,7 +40,7 @@ def handle_sigint(_s, _f):
     global running
     with running_lock:
         running = False
-signal.signal(signal.SIGINT, handle_sigint)
+signal.signal(signal.SIGINT, handle_sigint) # Ctrl+C handler
 
 # ------------------------- Sensor thread -------------------------
 def sensor_thread():
@@ -71,55 +71,20 @@ def sensor_thread():
 # ------------------------- Motor thread -------------------------
 def motor_thread():
     global running
-    ctrl, gsw = dynamixel_connect()  # configures EP mode + torque on (per your driver)
-    print("\033[92mDMX: connected\033[0m")
+    
+    dmx_controller, dmx_GSW = dynamixel_connect()
+    print("\033[93mTELEOP: Motors Connected!\033[0m")
+    time.sleep(0.5)
 
-    # Seed ticks from present positions so motion is relative to current pose
-    ids = [JOINT1, JOINT2, JOINT3, GRIPPER1, GRIPPER2, GRIPPER3]
-    ticks = [0, 0, 0, 0, 0, 0]
-    for i, mid in enumerate(ids):
-        pv = ctrl.read(mid, PRESENT_POSITION)
-        ticks[i] = int(pv) if pv is not False else 0
-
-    period = 1.0 / CTRL_HZ
-    print_period = 1.0 / PRINT_HZ
-    t_last_print = 0.0
-
+    dmx_controller.write(11, TORQUE_ENABLE, 1)
     try:
-        while True:
-            with running_lock:
-                if not running:
-                    break
-
-            # get latest Fz (may be None until first sample)
-            with shared_lock:
-                Fz = shared["Fz"]
-
-            # decide and update ticks
-            if Fz is not None and Fz < FZ_THRESHOLD_N:
-                ticks[1] += STEP_TICKS  # JOINT2 (ID12) spin step
-
-            # send goal for all six (API expects 6-length list)
-            if not dynamixel_drive(ctrl, gsw, ticks):
-                print("\033[91m[WARN] SyncWrite failed\033[0m")
-
-            # periodic status
-            now = time.perf_counter()
-            if (now - t_last_print) >= print_period:
-                t_last_print = now
-                print(f"Fz={Fz if Fz is not None else '---':>7}  action={'SPIN' if (Fz is not None and Fz < FZ_THRESHOLD_N) else 'HOLD'}  id12_goal={ticks[1]}")
-
-            # pace motor loop
-            time.sleep(period)
-
-    except Exception as e:
-        print(f"\033[91m[FATAL][MOTOR] {e}\033[0m", file=sys.stderr)
+        while running:
+            current_pos = dmx_controller.read(11, PRESENT_POSITION)
+            print(f"Current Pos: {current_pos}")
+            time.sleep(0.1)
     finally:
-        try:
-            dynamixel_disconnect(ctrl)
-        except Exception:
-            pass
-        print("\033[93mDMX: disconnected\033[0m")
+        dynamixel_disconnect(dmx_controller)
+        print("\033[93mTELEOP: Motors Disconnected!\033[0m")
 
 # --------------------------- Main ---------------------------
 if __name__ == "__main__":
