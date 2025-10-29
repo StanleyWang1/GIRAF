@@ -12,6 +12,9 @@ import time
 import sys
 import signal
 import threading
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from collections import deque
 
 from force_sensor_driver import ForceSensorDriver
 from dynamixel_driver import (
@@ -26,6 +29,8 @@ SENSOR_TIMEOUT = 0.25   # seconds to wait for a new sensor sample in sensor thre
 CTRL_HZ        = 100.0  # motor update rate
 PRINT_HZ       = 2.0    # status print rate
 TARE_ON_START  = True
+PLOT_WINDOW    = 5.0    # seconds of data to show
+PLOT_UPDATE_MS = 50     # ms between plot updates
 # ========================================================
 
 # Shared state
@@ -127,13 +132,64 @@ def motor_thread():
         dynamixel_disconnect(dmx_controller)
         print("\033[93mCONTROLLER: Motors Disconnected!\033[0m")
 
+# ------------------------- Plot thread -------------------------
+def plot_thread():
+    global running
+    
+    # Initialize data structures
+    t_data = deque(maxlen=int(PLOT_WINDOW * CTRL_HZ))
+    fz_data = deque(maxlen=int(PLOT_WINDOW * CTRL_HZ))
+    t_start = time.perf_counter()
+    
+    # Setup the figure
+    fig, ax = plt.subplots(figsize=(10, 4))
+    line, = ax.plot([], [], 'b-', label='Fz')
+    ax.set_xlabel('Time [s]')
+    ax.set_ylabel('Force [N]')
+    ax.set_title('Live Force Reading')
+    ax.grid(True)
+    ax.set_ylim(-10, 10)  # Adjust force range as needed
+    ax.legend()
+    
+    def update(frame):
+        with shared_lock:
+            fz = shared["Fz"]
+        
+        if fz is not None:
+            t = time.perf_counter() - t_start
+            t_data.append(t)
+            fz_data.append(fz)
+            
+            # Update line data
+            line.set_data(t_data, fz_data)
+            
+            # Adjust x-axis limits to scroll
+            if t_data:
+                ax.set_xlim(max(0, t - PLOT_WINDOW), t)
+        
+        return line,
+    
+    ani = FuncAnimation(fig, update, interval=PLOT_UPDATE_MS, blit=True)
+    
+    try:
+        plt.show()
+    except Exception as e:
+        print(f"\033[91m[PLOT] Error: {e}\033[0m")
+    finally:
+        plt.close()
+        print("\033[93mPLOT: stopped\033[0m")
+
 # --------------------------- Main ---------------------------
 if __name__ == "__main__":
     print("\033[96mRUN: threaded force→spin — Ctrl+C to stop\033[0m")
     ts = threading.Thread(target=sensor_thread, daemon=True)
     tm = threading.Thread(target=motor_thread,  daemon=True)
+    tp = threading.Thread(target=plot_thread,   daemon=True)
+    
     ts.start()
     tm.start()
+    tp.start()
+    
     try:
         while True:
             with running_lock:
@@ -146,4 +202,5 @@ if __name__ == "__main__":
     finally:
         ts.join(timeout=2.0)
         tm.join(timeout=2.0)
+        tp.join(timeout=2.0)
         print("\033[92mDONE\033[0m")
