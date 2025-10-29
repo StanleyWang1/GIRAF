@@ -76,10 +76,9 @@ def motor_thread():
 
     # Controller Parameters
     ts = 1/500.0
-    Mv = 10.0 # virtual mass
-    Bv = 1000.0 # virtual damping
-    Kf = 100.0 
-
+    Mv = 1.0 # virtual mass
+    Bv = 500.0 # virtual damping
+    Kf = 200.0 
 
     # Connect to motors and home
     dmx_controller, dmx_GSW = dynamixel_connect()
@@ -95,15 +94,16 @@ def motor_thread():
     # Performance benchmarking (loop Hz)
     loop_count = 0
     last_time = time.perf_counter()
+
     print_interval = 1.0 / PRINT_HZ if PRINT_HZ > 0 else 1.0
 
-    Fz_des = -2.0
+    Fz_des = -0.5
     vel = 0.0
     try:
         while running:
             with shared_lock:
                 Fz = shared["Fz"]
-            F_error = Fz - Fz_des if Fz is not None else 0.0
+            F_error = Fz_des - Fz if Fz is not None else 0.0
             new_vel = (ts/Mv)*(Kf*F_error) + (1 - (ts*Bv)/Mv)*vel
             vel = new_vel
 
