@@ -72,27 +72,45 @@ def motor_thread():
     global running
     
     PITCH_MOTOR = 12 
+    PITCH_TICKS = int((MOTOR12_MIN + MOTOR12_MAX)/2)
 
+    # Controller Parameters
+    ts = 1/500.0
+    Mv = 10.0 # virtual mass
+    Bv = 1000.0 # virtual damping
+    Kf = 100.0 
+
+
+    # Connect to motors and home
     dmx_controller, dmx_GSW = dynamixel_connect()
-    print("\033[93mTELEOP: Motors Connected!\033[0m")
+    print("\033[93mCONTROLLER: Motors Connected!\033[0m")
+    time.sleep(0.5)
+    dynamixel_drive(dmx_controller, dmx_GSW, [PITCH_TICKS])
     time.sleep(0.5)
 
-    # HOME_POS = int([(MOTOR12_MIN + MOTOR12_MAX])
-    dynamixel_drive(dmx_controller, dmx_GSW, [int((MOTOR12_MIN + MOTOR12_MAX)/2)])
+    # Wait for user to start control loop
+    print("\033[93mCONTROLLER: Press ENTER to start admittance controller!\033[0m")
+    input()
 
     # Performance benchmarking (loop Hz)
     loop_count = 0
     last_time = time.perf_counter()
     print_interval = 1.0 / PRINT_HZ if PRINT_HZ > 0 else 1.0
 
+    Fz_des = -2.0
+    vel = 0.0
     try:
         while running:
             with shared_lock:
                 Fz = shared["Fz"]
-            
-            MOTOR_12_ticks = (MOTOR12_MIN + MOTOR12_MAX)/2 + 100*Fz
-            MOTOR_12_ticks = max(MOTOR12_MIN, min(MOTOR12_MAX, MOTOR_12_ticks))
-            dynamixel_drive(dmx_controller, dmx_GSW, [int(MOTOR_12_ticks)])
+            F_error = Fz - Fz_des if Fz is not None else 0.0
+            new_vel = (ts/Mv)*(Kf*F_error) + (1 - (ts*Bv)/Mv)*vel
+            vel = new_vel
+
+            PITCH_TICKS += int(vel)
+            PITCH_TICKS = max(MOTOR12_MIN, min(MOTOR12_MAX, PITCH_TICKS))
+            dynamixel_drive(dmx_controller, dmx_GSW, [PITCH_TICKS])
+  
             time.sleep(0.001)
 
             # perf counting
@@ -107,7 +125,7 @@ def motor_thread():
 
     finally:
         dynamixel_disconnect(dmx_controller)
-        print("\033[93mTELEOP: Motors Disconnected!\033[0m")
+        print("\033[93mCONTROLLER: Motors Disconnected!\033[0m")
 
 # --------------------------- Main ---------------------------
 if __name__ == "__main__":
