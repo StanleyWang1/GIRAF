@@ -189,7 +189,7 @@ import select
 def keyboard_thread():
     global running, boom_pos
     
-    TICK_STEP = 10
+    TICK_STEP = 50
     LOOP_HZ = 100
     
     print("\033[93mKEYBOARD: W/S to move boom, Q to quit\033[0m")
@@ -218,8 +218,7 @@ def keyboard_thread():
                         
                 if delta != 0:
                     with boom_pos_lock:
-                        new_pos = max(MOTOR12_MIN, min(MOTOR12_MAX, boom_pos + delta))
-                        boom_pos = new_pos
+                        boom_pos += delta
                         
             time.sleep(1/LOOP_HZ)
             
