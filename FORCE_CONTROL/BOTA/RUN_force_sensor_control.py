@@ -83,7 +83,7 @@ def motor_thread():
     dmx_controller, dmx_GSW = dynamixel_connect()
     print("\033[93mCONTROLLER: Motors Connected!\033[0m")
     time.sleep(0.5)
-    dynamixel_drive(dmx_controller, dmx_GSW, [PITCH_TICKS])
+    dynamixel_drive(dmx_controller, dmx_GSW, [PITCH_TICKS, boom_pos])
     time.sleep(0.5)
 
     # Wait for user to start control loop
@@ -107,14 +107,13 @@ def motor_thread():
             
             new_vel = (ts/Mv)*(Kf*F_error) + (1 - (ts*Bv)/Mv)*vel
             vel = new_vel
-
-            # Use boom_pos instead of PITCH_TICKS
-            with boom_pos_lock:
-                BOOM_TICKS = boom_pos
             
             PITCH_TICKS += int(vel)
             PITCH_TICKS = max(MOTOR12_MIN, min(MOTOR12_MAX, PITCH_TICKS))
             
+            with boom_pos_lock:
+                BOOM_TICKS = boom_pos
+                
             dynamixel_drive(dmx_controller, dmx_GSW, [PITCH_TICKS, BOOM_TICKS])
   
             time.sleep(0.001)
