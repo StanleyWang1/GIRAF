@@ -5,8 +5,6 @@ import threading
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from collections import deque
-import pygame
-import readchar  # Add to imports at top
 
 from force_sensor_driver import ForceSensorDriver
 from dynamixel_driver import (
@@ -34,6 +32,8 @@ shared_lock = threading.Lock()
 
 boom_pos = MOTOR13_HOME
 boom_pos_lock = threading.Lock()
+
+start_event = threading.Event()   # <-- new event for starting motor loop
 
 def handle_sigint(_s, _f):
     global running
@@ -87,9 +87,9 @@ def motor_thread():
     dynamixel_drive(dmx_controller, dmx_GSW, [PITCH_TICKS, boom_pos])
     time.sleep(0.5)
 
-    # Wait for user to start control loop
+    # Wait for user to start control loop (replace input())
     print("\033[93mCONTROLLER: Press ENTER to start admittance controller!\033[0m")
-    input()
+    start_event.wait()   # <-- wait until keyboard thread signals start
 
     # Performance benchmarking (loop Hz)
     loop_count = 0
@@ -206,7 +206,9 @@ def keyboard_thread():
                 key = sys.stdin.read(1).lower()
                 
                 delta = 0
-                if key == 'w':
+                if key == '\r' or key == '\n':
+                    start_event.set()   # signal motor_thread to start
+                elif key == 'w':
                     delta = TICK_STEP
                 elif key == 's':
                     delta = -TICK_STEP
