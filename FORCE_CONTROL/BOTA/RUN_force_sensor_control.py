@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from collections import deque
 import pygame
+import readchar  # Add to imports at top
 
 from force_sensor_driver import ForceSensorDriver
 from dynamixel_driver import (
@@ -183,38 +184,35 @@ def plot_thread():
 def keyboard_thread():
     global running, boom_pos
     
-    pygame.init()
-    pygame.display.set_mode((100,100))  # Tiny window to capture keys
-    
     TICK_STEP = 10
     LOOP_HZ = 100
     
+    print("\033[93mKEYBOARD: W/S to move boom, Q to quit\033[0m")
+    
     try:
         while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
+            if readchar.kbhit():
+                key = readchar.readchar().lower()
+                
+                delta = 0
+                if key == 'w':
+                    delta = TICK_STEP
+                elif key == 's':
+                    delta = -TICK_STEP
+                elif key == 'q':  # Use Q instead of ESC for Linux
                     with running_lock:
                         running = False
                         
-            # Get pressed keys
-            keys = pygame.key.get_pressed()
-            delta = 0
-            if keys[pygame.K_w]:
-                delta += TICK_STEP
-            if keys[pygame.K_s]:
-                delta -= TICK_STEP
-            if keys[pygame.K_ESCAPE]:
-                with running_lock:
-                    running = False
-                    
-            if delta != 0:
-                with boom_pos_lock:
-                    boom_pos += delta
-                    
+                if delta != 0:
+                    with boom_pos_lock:
+                        new_pos = max(MOTOR12_MIN, min(MOTOR12_MAX, boom_pos + delta))
+                        boom_pos = new_pos
+            
             time.sleep(1/LOOP_HZ)
             
+    except Exception as e:
+        print(f"\033[91m[KEYBOARD] Error: {e}\033[0m")
     finally:
-        pygame.quit()
         print("\033[93mKEYBOARD: stopped\033[0m")
 
 # --------------------------- Main ---------------------------
