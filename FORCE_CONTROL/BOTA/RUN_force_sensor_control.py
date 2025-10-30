@@ -181,6 +181,11 @@ def plot_thread():
         print("\033[93mPLOT: stopped\033[0m")
 
 # ------------------------- Keyboard thread -------------------------
+import sys
+import tty
+import termios
+import select
+
 def keyboard_thread():
     global running, boom_pos
     
@@ -189,17 +194,23 @@ def keyboard_thread():
     
     print("\033[93mKEYBOARD: W/S to move boom, Q to quit\033[0m")
     
+    # Save terminal settings
+    old_settings = termios.tcgetattr(sys.stdin)
     try:
+        # Set terminal to raw mode
+        tty.setraw(sys.stdin.fileno())
+        
         while running:
-            if readchar.kbhit():
-                key = readchar.readchar().lower()
+            # Check if input is ready
+            if select.select([sys.stdin], [], [], 0)[0] != []:
+                key = sys.stdin.read(1).lower()
                 
                 delta = 0
                 if key == 'w':
                     delta = TICK_STEP
                 elif key == 's':
                     delta = -TICK_STEP
-                elif key == 'q':  # Use Q instead of ESC for Linux
+                elif key == 'q':
                     with running_lock:
                         running = False
                         
@@ -207,12 +218,14 @@ def keyboard_thread():
                     with boom_pos_lock:
                         new_pos = max(MOTOR12_MIN, min(MOTOR12_MAX, boom_pos + delta))
                         boom_pos = new_pos
-            
+                        
             time.sleep(1/LOOP_HZ)
             
     except Exception as e:
         print(f"\033[91m[KEYBOARD] Error: {e}\033[0m")
     finally:
+        # Restore terminal settings
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
         print("\033[93mKEYBOARD: stopped\033[0m")
 
 # --------------------------- Main ---------------------------
