@@ -81,7 +81,7 @@ def motor_thread():
 
     # Controller Parameters
     ts = 1/500.0
-    Mv = 1.0 # virtual mass
+    Mv = 1 # virtual mass
     Bv = 500.0 # virtual damping
     Kf = 1000.0 
 
@@ -102,7 +102,7 @@ def motor_thread():
 
     print_interval = 1.0 / PRINT_HZ if PRINT_HZ > 0 else 1.0
 
-    Fz_des = -5.0
+    Fz_des = -3.0
     vel = 0.0
     try:
         while running:

@@ -36,7 +36,7 @@ def dynamixel_connect():
     for motor_id in MOTOR_IDS:
         controller.write(motor_id, OPERATING_MODE, 4)  # extended position control
         controller.write(motor_id, PROFILE_VELOCITY, 400) # velocity limit
-        controller.write(motor_id, PROFILE_ACCELERATION, 100) # acceleration limit
+        controller.write(motor_id, PROFILE_ACCELERATION, 500) # acceleration limit
         controller.write(motor_id, TORQUE_ENABLE, 1) # torque enable
  
     # Optional: Force Limit on Gripper
