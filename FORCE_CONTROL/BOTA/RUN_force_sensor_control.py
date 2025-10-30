@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-"""
-force_spin_threaded.py
-- Thread 1: Force sensor -> updates shared Fz (blocking read)
-- Thread 2: Motor control -> if Fz < -5 N, increment ID12 goal; else hold
-- Uses your helpers:
-    * force_sensor_driver.ForceSensorDriver
-    * dynamixel_driver.{dynamixel_connect, dynamixel_drive, dynamixel_disconnect}
-"""
-
 import time
 import sys
 import signal
@@ -15,6 +5,7 @@ import threading
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from collections import deque
+from pynput import keyboard
 
 from force_sensor_driver import ForceSensorDriver
 from dynamixel_driver import (
@@ -39,6 +30,9 @@ running_lock = threading.Lock()
 
 shared = {"Fz": None}
 shared_lock = threading.Lock()
+
+boom_pos = MOTOR13_HOME
+boom_pos_lock = threading.Lock()
 
 def handle_sigint(_s, _f):
     global running
@@ -74,7 +68,7 @@ def sensor_thread():
 
 # ------------------------- Motor thread -------------------------
 def motor_thread():
-    global running
+    global running, boom_pos
     
     PITCH_MOTOR = 12 
     PITCH_TICKS = int((MOTOR12_MIN + MOTOR12_MAX)/2)
@@ -110,13 +104,18 @@ def motor_thread():
                 Fz = shared["Fz"]
             F_error = Fz_des - Fz if Fz is not None else 0.0
             F_error = max(-0.5, min(0.5, F_error))
-            # print(F_error)
+            
             new_vel = (ts/Mv)*(Kf*F_error) + (1 - (ts*Bv)/Mv)*vel
             vel = new_vel
 
+            # Use boom_pos instead of PITCH_TICKS
+            with boom_pos_lock:
+                BOOM_TICKS = boom_pos
+            
             PITCH_TICKS += int(vel)
             PITCH_TICKS = max(MOTOR12_MIN, min(MOTOR12_MAX, PITCH_TICKS))
-            dynamixel_drive(dmx_controller, dmx_GSW, [PITCH_TICKS])
+            
+            dynamixel_drive(dmx_controller, dmx_GSW, [PITCH_TICKS, BOOM_TICKS])
   
             time.sleep(0.001)
 
@@ -181,16 +180,69 @@ def plot_thread():
         plt.close()
         print("\033[93mPLOT: stopped\033[0m")
 
+# ------------------------- Keyboard thread -------------------------
+def keyboard_thread():
+    global running, boom_pos
+    
+    # Initialize key states
+    key_state = {'w': False, 's': False}
+    TICK_STEP = 10
+    LOOP_HZ = 100
+    
+    def on_press(key):
+        try:
+            k = key.char.lower()
+            if k in key_state:
+                key_state[k] = True
+        except AttributeError:
+            pass
+
+    def on_release(key):
+        try:
+            k = key.char.lower()
+            if k in key_state:
+                key_state[k] = False
+        except AttributeError:
+            if key == keyboard.Key.esc:
+                global running
+                with running_lock:
+                    running = False
+                return False
+
+    # Start keyboard listener
+    listener = keyboard.Listener(on_press=on_press, on_release=on_release)
+    listener.start()
+
+    try:
+        while running:
+            # Update boom position based on key states
+            delta = 0
+            if key_state['w']:
+                delta += TICK_STEP
+            if key_state['s']:
+                delta -= TICK_STEP
+            
+            if delta != 0:
+                with boom_pos_lock:
+                    boom_pos += delta
+            
+            time.sleep(1/LOOP_HZ)
+    finally:
+        listener.stop()
+        print("\033[93mKEYBOARD: stopped\033[0m")
+
 # --------------------------- Main ---------------------------
 if __name__ == "__main__":
     print("\033[96mRUN: threaded force→spin — Ctrl+C to stop\033[0m")
     ts = threading.Thread(target=sensor_thread, daemon=True)
     tm = threading.Thread(target=motor_thread,  daemon=True)
     tp = threading.Thread(target=plot_thread,   daemon=True)
+    tk = threading.Thread(target=keyboard_thread, daemon=True)
     
     ts.start()
     tm.start()
     tp.start()
+    tk.start()
     
     try:
         while True:
@@ -205,4 +257,5 @@ if __name__ == "__main__":
         ts.join(timeout=2.0)
         tm.join(timeout=2.0)
         tp.join(timeout=2.0)
+        tk.join(timeout=2.0)
         print("\033[92mDONE\033[0m")

@@ -11,7 +11,7 @@ PITCH_MOTOR = 12
 BOOM_MOTOR = 13
 
 # MOTOR_IDS = [ROLL_MOTOR, PITCH_MOTOR, BOOM_MOTOR]
-MOTOR_IDS = [PITCH_MOTOR]
+MOTOR_IDS = [PITCH_MOTOR, BOOM_MOTOR]
 
 def dynamixel_connect():
     # Initialize controller
@@ -46,7 +46,7 @@ def dynamixel_connect():
 
 def dynamixel_drive(controller, group_sync_write, ticks):
     param_success = group_sync_write.addParam(PITCH_MOTOR, ticks[0].to_bytes(4, 'little', signed=True))
-    # param_success &= group_sync_write.addParam(JOINT2, ticks[1].to_bytes(4, 'little', signed=True))
+    param_success &= group_sync_write.addParam(BOOM_MOTOR, ticks[1].to_bytes(4, 'little', signed=True))
     # param_success &= group_sync_write.addParam(JOINT3, ticks[2].to_bytes(4, 'little', signed=True))
     # param_success &= group_sync_write.addParam(GRIPPER, ticks[3].to_bytes(4, 'little', signed=True))
 

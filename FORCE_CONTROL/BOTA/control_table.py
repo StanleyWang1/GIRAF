@@ -1,7 +1,7 @@
 # HOME POSITIONS (in reference kinematic configuration)
 MOTOR11_HOME = 2900
 MOTOR12_HOME = 2550 # min is 650
-MOTOR13_HOME = 3700 
+MOTOR13_HOME = 3000 
 
 # JOINT LIMITS
 MOTOR12_MAX = 2550
