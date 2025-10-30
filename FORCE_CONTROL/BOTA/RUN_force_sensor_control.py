@@ -5,7 +5,7 @@ import threading
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from collections import deque
-from pynput import keyboard
+import pygame
 
 from force_sensor_driver import ForceSensorDriver
 from dynamixel_driver import (
@@ -183,51 +183,38 @@ def plot_thread():
 def keyboard_thread():
     global running, boom_pos
     
-    # Initialize key states
-    key_state = {'w': False, 's': False}
+    pygame.init()
+    pygame.display.set_mode((100,100))  # Tiny window to capture keys
+    
     TICK_STEP = 10
     LOOP_HZ = 100
     
-    def on_press(key):
-        try:
-            k = key.char.lower()
-            if k in key_state:
-                key_state[k] = True
-        except AttributeError:
-            pass
-
-    def on_release(key):
-        try:
-            k = key.char.lower()
-            if k in key_state:
-                key_state[k] = False
-        except AttributeError:
-            if key == keyboard.Key.esc:
-                global running
-                with running_lock:
-                    running = False
-                return False
-
-    # Start keyboard listener
-    listener = keyboard.Listener(on_press=on_press, on_release=on_release)
-    listener.start()
-
     try:
         while running:
-            # Update boom position based on key states
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    with running_lock:
+                        running = False
+                        
+            # Get pressed keys
+            keys = pygame.key.get_pressed()
             delta = 0
-            if key_state['w']:
+            if keys[pygame.K_w]:
                 delta += TICK_STEP
-            if key_state['s']:
+            if keys[pygame.K_s]:
                 delta -= TICK_STEP
-            
+            if keys[pygame.K_ESCAPE]:
+                with running_lock:
+                    running = False
+                    
             if delta != 0:
                 with boom_pos_lock:
                     boom_pos += delta
-            
+                    
             time.sleep(1/LOOP_HZ)
+            
     finally:
-        listener.stop()
+        pygame.quit()
         print("\033[93mKEYBOARD: stopped\033[0m")
 
 # --------------------------- Main ---------------------------
