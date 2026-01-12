@@ -1,0 +1,21 @@
+<!-- Reachbot Mujoco model with 4 arms and no deflection of booms-->
+<!-- Based on Reachbot Models by Bear Tolson @Stanford BDML -->
+<!-- Updated by Samuel Jahn @Stanford BDML -->
+
+<body name="Base3" pos="0 0 0">
+    <geom name="Base3" class="armBase"/>
+    <body name="Motor31" pos = "0 0 0.069311">
+        <joint name="revolver31" class="shoulder"/>
+        <geom name="Motor31" class="shoulder"/>
+        <body name="Motor32" pos="0 0 0.036176">
+            <site name="motorSite3" pos="0 0 -0.02" size="0.005"/>
+            <geom name="Motor32" class="elbow"/>
+            <joint name="revolver32" class="elbow"/>
+            <body name="boom3" pos="0 0.059837 -0.0525">
+                <joint name="prismatic3" class="prismatic"/>
+                <site name="boomEndSite3" pos="0 0 0" size="0.005"/>
+                <geom name="boomEnd3" class="foot"/>
+            </body>
+        </body>
+    </body>
+</body>
