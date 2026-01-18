@@ -109,25 +109,25 @@
 
     <!-- Anchor REGIONS (fixed in world) -->
     <!-- These are the "zones" where feet can latch. -->
-    <body name="region1" pos="0.0  0.8  0.2">
+    <body name="region1" pos="0.0  0.8  0.5">
       <site name="region_site1" pos="0 0 0"/>
       <geom name="region1_geom" type="sphere" size="0.1"
             rgba="0.5 0.5 0.5 0.25"
             contype="0" conaffinity="0"/>
     </body>
-    <body name="region2" pos="0.8  0.0  0.2">
+    <body name="region2" pos="0.8  0.0  0.5">
       <site name="region_site2" pos="0 0 0"/>
       <geom name="region2_geom" type="sphere" size="0.1"
             rgba="0.5 0.5 0.5 0.25"
             contype="0" conaffinity="0"/>
     </body>
-    <body name="region3" pos="0.0 -0.8  0.2">
+    <body name="region3" pos="0.0 -0.8  0.5">
       <site name="region_site3" pos="0 0 0"/>
       <geom name="region3_geom" type="sphere" size="0.1"
             rgba="0.5 0.5 0.5 0.25"
             contype="0" conaffinity="0"/>
     </body>
-    <body name="region4" pos="-0.8 0.0  0.2">
+    <body name="region4" pos="-0.8 0.0  0.5">
       <site name="region_site4" pos="0 0 0"/>
       <geom name="region4_geom" type="sphere" size="0.1"
             rgba="0.5 0.5 0.5 0.25"
