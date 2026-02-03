@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<mujoco model="env_flat_w_anchors">
+<mujoco model="vertical_climbing">
 
   <!-- Compiler -->
   <compiler angle="degree" autolimits="true"/>
@@ -35,10 +35,10 @@
     </default>
 
     <default class="actuatorPrismatic">
-      <position forcerange="-476 476" inheritrange="1" kp="200"/>
+      <position forcerange="-476 476" inheritrange="1" kp="2000"/>
       <default class="prismatic">
         <joint type="slide" axis="0 1 0"
-               armature="0.005" damping="20" frictionloss="1"
+               armature="0.05" damping="200" frictionloss="10"
                limited="true" range="0 1.7"/>
       </default>
     </default>
@@ -107,29 +107,81 @@
           contype="1" conaffinity="1"
           friction="1 0.005 0.0001"/>
 
-    <!-- Anchor REGIONS (fixed in world) -->
-    <!-- These are the "zones" where feet can latch. -->
-    <body name="region1" pos="0.0  0.8  1.5">
+    <!-- Anchor REGIONS (fixed in world) - 12 anchors in 3 vertical layers -->
+    <!-- Layer 1: z = 0.5 -->
+    <body name="region1" pos="0.0  0.8  0.5">
       <site name="region_site1" pos="0 0 0"/>
-      <geom name="region1_geom" type="sphere" size="0.1"
+      <geom name="region1_geom" type="sphere" size="0.05"
             rgba="0.5 0.5 0.5 0.25"
             contype="0" conaffinity="0"/>
     </body>
-    <body name="region2" pos="0.8  0.0  1.5">
+    <body name="region2" pos="0.8  0.0  0.5">
       <site name="region_site2" pos="0 0 0"/>
-      <geom name="region2_geom" type="sphere" size="0.1"
+      <geom name="region2_geom" type="sphere" size="0.05"
             rgba="0.5 0.5 0.5 0.25"
             contype="0" conaffinity="0"/>
     </body>
-    <body name="region3" pos="0.0 -0.8  1.5">
+    <body name="region3" pos="0.0 -0.8  0.5">
       <site name="region_site3" pos="0 0 0"/>
-      <geom name="region3_geom" type="sphere" size="0.1"
+      <geom name="region3_geom" type="sphere" size="0.05"
             rgba="0.5 0.5 0.5 0.25"
             contype="0" conaffinity="0"/>
     </body>
-    <body name="region4" pos="-0.8 0.0  1.5">
+    <body name="region4" pos="-0.8  0.0  0.5">
       <site name="region_site4" pos="0 0 0"/>
-      <geom name="region4_geom" type="sphere" size="0.1"
+      <geom name="region4_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+
+    <!-- Layer 2: z = 1.0 -->
+    <body name="region5" pos="0.0  0.8  1.0">
+      <site name="region_site5" pos="0 0 0"/>
+      <geom name="region5_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+    <body name="region6" pos="0.8  0.0  1.0">
+      <site name="region_site6" pos="0 0 0"/>
+      <geom name="region6_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+    <body name="region7" pos="0.0 -0.8  1.0">
+      <site name="region_site7" pos="0 0 0"/>
+      <geom name="region7_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+    <body name="region8" pos="-0.8  0.0  1.0">
+      <site name="region_site8" pos="0 0 0"/>
+      <geom name="region8_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+
+    <!-- Layer 3: z = 1.5 -->
+    <body name="region9" pos="0.0  0.8  1.5">
+      <site name="region_site9" pos="0 0 0"/>
+      <geom name="region9_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+    <body name="region10" pos="0.8  0.0  1.5">
+      <site name="region_site10" pos="0 0 0"/>
+      <geom name="region10_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+    <body name="region11" pos="0.0 -0.8  1.5">
+      <site name="region_site11" pos="0 0 0"/>
+      <geom name="region11_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+    <body name="region12" pos="-0.8  0.0  1.5">
+      <site name="region_site12" pos="0 0 0"/>
+      <geom name="region12_geom" type="sphere" size="0.05"
             rgba="0.5 0.5 0.5 0.25"
             contype="0" conaffinity="0"/>
     </body>
@@ -175,7 +227,7 @@
     </spatial>
   </tendon>
 
-  <!-- 🔗 Equality constraints: hard-connect each foot end-site to its anchor site -->
+  <!-- Equality constraints: hard-connect each foot end-site to its anchor site -->
   <equality>
     <!-- Feet connect to their own per-foot mocap anchor bodies -->
     <connect name="foot1_anchor" site1="boomEndSite1" site2="foot1_anchor_site"/>

@@ -14,9 +14,9 @@ ARM2_ROLL = 31
 ARM2_PITCH = 32
 ARM2_BOOM = 33
 
-# ARM3_ROLL = 41
-# ARM3_PITCH = 42
-# ARM3_BOOM = 43
+ARM3_ROLL = 41
+ARM3_PITCH = 42
+ARM3_BOOM = 43
 
 ARM4_ROLL = 51
 ARM4_PITCH = 52
@@ -42,10 +42,10 @@ def dynamixel_connect():
     time.sleep(2)
 
     # Set Control Mode
-    for motor_id in [ARM1_ROLL, ARM1_PITCH, ARM1_BOOM, ARM2_ROLL, ARM2_PITCH, ARM2_BOOM, ARM4_ROLL, ARM4_PITCH, ARM4_BOOM]:
+    for motor_id in [ARM1_ROLL, ARM1_PITCH, ARM1_BOOM, ARM2_ROLL, ARM2_PITCH, ARM2_BOOM, ARM3_ROLL, ARM3_PITCH, ARM3_BOOM, ARM4_ROLL, ARM4_PITCH, ARM4_BOOM]:
         controller.write(motor_id, OPERATING_MODE, 4)  # extended position control
-        controller.write(motor_id, PROFILE_VELOCITY, 400) # velocity limit
-        controller.write(motor_id, PROFILE_ACCELERATION, 500) # acceleration limit
+        controller.write(motor_id, PROFILE_VELOCITY, 200) # velocity limit
+        controller.write(motor_id, PROFILE_ACCELERATION, 100) # acceleration limit
         controller.write(motor_id, TORQUE_ENABLE, 1) # torque enable
 
     return controller, group_sync_write
@@ -57,9 +57,12 @@ def dynamixel_drive(controller, group_sync_write, ticks):
     param_success &= group_sync_write.addParam(ARM2_ROLL, ticks[3].to_bytes(4, 'little', signed=True))
     param_success &= group_sync_write.addParam(ARM2_PITCH, ticks[4].to_bytes(4, 'little', signed=True))
     param_success &= group_sync_write.addParam(ARM2_BOOM, ticks[5].to_bytes(4, 'little', signed=True))
-    param_success &= group_sync_write.addParam(ARM4_ROLL, ticks[6].to_bytes(4, 'little', signed=True))
-    param_success &= group_sync_write.addParam(ARM4_PITCH, ticks[7].to_bytes(4, 'little', signed=True))
-    param_success &= group_sync_write.addParam(ARM4_BOOM, ticks[8].to_bytes(4, 'little', signed=True))
+    param_success &= group_sync_write.addParam(ARM3_ROLL, ticks[6].to_bytes(4, 'little', signed=True))
+    param_success &= group_sync_write.addParam(ARM3_PITCH, ticks[7].to_bytes(4, 'little', signed=True))
+    param_success &= group_sync_write.addParam(ARM3_BOOM, ticks[8].to_bytes(4, 'little', signed=True))
+    param_success &= group_sync_write.addParam(ARM4_ROLL, ticks[9].to_bytes(4, 'little', signed=True))
+    param_success &= group_sync_write.addParam(ARM4_PITCH, ticks[10].to_bytes(4, 'little', signed=True))
+    param_success &= group_sync_write.addParam(ARM4_BOOM, ticks[11].to_bytes(4, 'little', signed=True))
 
     if not param_success:
         print("Failed to add parameters for SyncWrite")
@@ -75,17 +78,21 @@ def dynamixel_drive(controller, group_sync_write, ticks):
 
 def dynamixel_disconnect(controller):
     # Torque OFF all motors individually (simple)
-    controller.WRITE(ARM1_ROLL, TORQUE_ENABLE, 0)
-    controller.WRITE(ARM1_PITCH, TORQUE_ENABLE, 0)
-    controller.WRITE(ARM1_BOOM, TORQUE_ENABLE, 0)
+    controller.write(ARM1_ROLL, TORQUE_ENABLE, 0)
+    controller.write(ARM1_PITCH, TORQUE_ENABLE, 0)
+    controller.write(ARM1_BOOM, TORQUE_ENABLE, 0)
 
-    controller.WRITE(ARM2_ROLL, TORQUE_ENABLE, 0)
-    controller.WRITE(ARM2_PITCH, TORQUE_ENABLE, 0)
-    controller.WRITE(ARM2_BOOM, TORQUE_ENABLE, 0)
+    controller.write(ARM2_ROLL, TORQUE_ENABLE, 0)
+    controller.write(ARM2_PITCH, TORQUE_ENABLE, 0)
+    controller.write(ARM2_BOOM, TORQUE_ENABLE, 0)
 
-    controller.WRITE(ARM4_ROLL, TORQUE_ENABLE, 0)
-    controller.WRITE(ARM4_PITCH, TORQUE_ENABLE, 0)
-    controller.WRITE(ARM4_BOOM, TORQUE_ENABLE, 0)
+    controller.write(ARM3_ROLL, TORQUE_ENABLE, 0)
+    controller.write(ARM3_PITCH, TORQUE_ENABLE, 0)
+    controller.write(ARM3_BOOM, TORQUE_ENABLE, 0)
+    
+    controller.write(ARM4_ROLL, TORQUE_ENABLE, 0)
+    controller.write(ARM4_PITCH, TORQUE_ENABLE, 0)
+    controller.write(ARM4_BOOM, TORQUE_ENABLE, 0)
 
 def radians_to_ticks(rad):
     return int(rad / (2 * np.pi) * 4096)
@@ -95,6 +102,7 @@ def main():
     print("\033[93mDYNAMIXEL: Motors Connected, Driving to Home (5 sec)\033[0m")
     dynamixel_drive(controller, group_sync_write, [MOTOR21_HOME, MOTOR22_HOME, MOTOR23_HOME,
                                                    MOTOR31_HOME, MOTOR32_HOME, MOTOR33_HOME,
+                                                   MOTOR41_HOME, MOTOR42_HOME, MOTOR43_HOME,
                                                    MOTOR51_HOME, MOTOR52_HOME, MOTOR53_HOME])
     time.sleep(5)
     dynamixel_disconnect(controller)

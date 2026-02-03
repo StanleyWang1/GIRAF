@@ -1,10 +1,85 @@
-import pygame
-import time
 import argparse
-import matplotlib.pyplot as plt
+import ctypes
+import time
+from ctypes import wintypes
+
 import matplotlib.patches as patches
-from matplotlib.animation import FuncAnimation
+import matplotlib.pyplot as plt
 import numpy as np
+import pygame
+from matplotlib.animation import FuncAnimation
+
+AXIS_DEADZONE = 0.1
+TRIGGER_DEADZONE = AXIS_DEADZONE # Same deadzone for triggers
+AXIS_MAPPING = {
+    "LX": (0, False),
+    "LY": (1, True),
+    "RX": (2, False),
+    "RY": (3, True),
+}
+TRIGGER_MAPPING = {
+    "LT": 4,
+    "RT": 5,
+}
+BUTTON_MAPPING = {
+    "AB": 0,
+    "BB": 1,
+    "XB": 2,
+    "YB": 3,
+    "LB": 4,
+    "RB": 5,
+    "MENULEFT": 6,
+    "MENURIGHT": 7,
+}
+
+# XInput rumble support
+try:
+    xinput = ctypes.windll.xinput1_4
+except:
+    try:
+        xinput = ctypes.windll.xinput1_3
+    except:
+        try:
+            xinput = ctypes.windll.xinput9_1_0
+        except:
+            xinput = None
+
+class XINPUT_VIBRATION(ctypes.Structure):
+    _fields_ = [
+        ("wLeftMotorSpeed", wintypes.WORD),
+        ("wRightMotorSpeed", wintypes.WORD),
+    ]
+
+def set_rumble(controller_id, left_motor, right_motor):
+    """Set rumble motors (0-65535 each). Only works if XInput is available."""
+    if xinput is None:
+        return False
+    vibration = XINPUT_VIBRATION(int(left_motor), int(right_motor))
+    xinput.XInputSetState(controller_id, ctypes.byref(vibration))
+    return True
+
+def trigger_to_rumble(trigger_value, deadzone=TRIGGER_DEADZONE, gamma=3.0):
+    """Convert trigger value (0-1) to rumble strength with perceptual scaling.
+    
+    Args:
+        trigger_value: Raw trigger input (0-1)
+        deadzone: Minimum trigger value to consider (0.1 default)
+        gamma: Power law exponent for perceptual scaling (2.2 is typical for haptics)
+    
+    Returns:
+        Rumble motor value (0-65535)
+    """
+    # Apply deadzone and remap to 0-1
+    if trigger_value < deadzone:
+        return 0
+    
+    normalized = (trigger_value - deadzone) / (1.0 - deadzone)
+    
+    # Apply power law for perceptual linearity
+    # gamma=2.2 means gentle trigger pull = weak rumble, hard pull = strong rumble
+    perceptual = normalized ** gamma
+    
+    return int(perceptual * 65535)
 
 def joystick_connect():
     """Initialize pygame and connect to the first available joystick."""
@@ -18,34 +93,27 @@ def joystick_connect():
 
 def joystick_read(js):
     """Read all Xbox controller inputs and apply deadzone to analog values.
-    
+
     NOTE: Axis mappings verified for new red Xbox controller on Stanley's gaming laptop.
     """
-    def apply_deadzone(value, deadzone=0.15):
+
+    def apply_deadzone(value, deadzone=AXIS_DEADZONE):
         return 0 if -deadzone < value < deadzone else value
 
     pygame.event.pump()
+    data = {}
 
-    return {
-        "LX": apply_deadzone(js.get_axis(0)),          # Left stick X
-        "LY": -apply_deadzone(js.get_axis(1)),         # Left stick Y (negated: +1 up)
-        "RX": apply_deadzone(js.get_axis(2)),          # Right stick X
-        "RY": -apply_deadzone(js.get_axis(3)),         # Right stick Y (negated: +1 up)
-        "LT": apply_deadzone((js.get_axis(4) + 1) / 2),  # Left trigger (0 to 1)
-        "RT": apply_deadzone((js.get_axis(5) + 1) / 2),  # Right trigger (0 to 1)
-        "AB": js.get_button(0),                        # A button
-        "BB": js.get_button(1),                        # B button
-        "XB": js.get_button(2),                        # X button
-        "YB": js.get_button(3),                        # Y button
-        "LB": js.get_button(4),                        # LB (left shoulder)
-        "RB": js.get_button(5),                        # RB (right shoulder)
-        "MENULEFT": js.get_button(6),                  # Menu/back button
-        "MENURIGHT": js.get_button(7)                  # Start button
-    }
+    for name, (axis_index, invert) in AXIS_MAPPING.items():
+        value = apply_deadzone(js.get_axis(axis_index))
+        data[name] = -value if invert else value
 
-def joystick_disconnect(js):
-    """Clean up pygame joystick."""
-    pygame.quit()
+    for name, axis_index in TRIGGER_MAPPING.items():
+        data[name] = apply_deadzone((js.get_axis(axis_index) + 1) / 2)
+
+    for name, button_index in BUTTON_MAPPING.items():
+        data[name] = js.get_button(button_index)
+
+    return data
 
 class JoystickGUI:
     """Real-time GUI visualization of joystick state using matplotlib."""
@@ -181,6 +249,7 @@ def main():
     """Test loop: continuously read and display controller inputs."""
     parser = argparse.ArgumentParser(description="Xbox controller input reader")
     parser.add_argument("--gui", action="store_true", help="Enable GUI visualization")
+    parser.add_argument("--rumble", action="store_true", help="Enable rumble: LT->low freq, RT->high freq")
     args = parser.parse_args()
     
     if args.gui:
@@ -190,14 +259,29 @@ def main():
         try:
             js = joystick_connect()
             print("Xbox controller connected. Reading inputs... (Press Ctrl+C to exit)")
+            if args.rumble:
+                if xinput is None:
+                    print("WARNING: XInput not available, rumble disabled")
+                else:
+                    print("Rumble enabled: LT = low freq motor, RT = high freq motor")
             print("-" * 60)
             
             while True:
                 data = joystick_read(js)
                 print(data)
-                time.sleep(0.01)  # 50ms update rate
+                
+                # Update rumble based on trigger values with perceptual scaling
+                if args.rumble and xinput is not None:
+                    left_motor = trigger_to_rumble(data['LT'])   # LT controls low-freq motor
+                    right_motor = trigger_to_rumble(data['RT'])  # RT controls high-freq motor
+                    set_rumble(0, left_motor, right_motor)
+                
+                time.sleep(0.01)  # 100Hz update rate
         except KeyboardInterrupt:
             print("\nExiting...")
+            # Stop rumble on exit
+            if args.rumble and xinput is not None:
+                set_rumble(0, 0, 0)
         except RuntimeError as e:
             print(f"Error: {e}")
         finally:

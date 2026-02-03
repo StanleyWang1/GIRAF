@@ -53,9 +53,9 @@ def run_pattern(js: pygame.joystick.Joystick, low: float, high: float, duration:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Send rumble commands to a controller")
     parser.add_argument("--index", type=int, default=0, help="Joystick index (default: 0)")
-    parser.add_argument("--low", type=float, default=0.0, help="Low-frequency motor strength")
-    parser.add_argument("--high", type=float, default=1.0, help="High-frequency motor strength")
-    parser.add_argument("--duration", type=float, default=0.5, help="Pulse duration in seconds")
+    parser.add_argument("--low", type=float, default=0.5, help="Low-frequency motor strength (default: 0.5)")
+    parser.add_argument("--high", type=float, default=0.5, help="High-frequency motor strength (default: 0.5)")
+    parser.add_argument("--duration", type=float, default=1.0, help="Pulse duration in seconds (default: 1.0)")
     parser.add_argument("--repeats", type=int, default=1, help="Number of pulses")
     parser.add_argument("--interval", type=float, default=0.2, help="Delay between pulses")
     args = parser.parse_args()

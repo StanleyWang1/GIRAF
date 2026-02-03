@@ -1,13 +1,14 @@
 """
-Resolved Motion Rate Control (RMRC) - Sequential Anchoring + Synchronized Locomotion.
+Resolved Motion Rate Control (RMRC) - Vertical Climbing Simulation.
 
 Behavior:
 - Awaits joystick 'Y' press to begin sequential anchoring sequence
-- Drives arms 1->3->2->4 one at a time until all anchored
+- Drives arms 1->3->2->4 one at a time until all anchored (first 4 anchors)
 - Once all anchored, enters locomotion control mode
-- RT trigger: +Y velocity (task-space, all arms synchronized)
-- LT trigger: -Y velocity (task-space, all arms synchronized)
-- Both pressed simultaneously: no motion
+- LX/LY: X/Y velocity (task-space, all arms synchronized)
+- RT trigger: +Z velocity (up)
+- LT trigger: -Z velocity (down)
+- Both pressed simultaneously: no Z motion
 - X button: E-STOP (instant quit)
 
 Control law (sequencing phase):
@@ -17,14 +18,15 @@ Control law (sequencing phase):
   q_cmd <- q_cmd + qdot * dt                 (Euler)
 
 Control law (locomotion phase):
-  v = K * RT/LT trigger value  (task-space velocity in Y direction)
-  qdot = J^+ v                 (damped least-squares per arm)
+  v = K * joystick value  (task-space velocity in world frame)
+  qdot = J^+ v            (damped least-squares per arm)
   q_cmd <- q_cmd + qdot * dt   (Euler integration)
 
 Notes:
-- All 4 arms move synchronously during locomotion with the same task-space velocity
+- All 4 arms move synchronously during locomotion via QP-based control
 - Uses measured foot/region positions from MuJoCo sites
 - Uses analytical position Jacobian (RRP arm kinematics)
+- Vertical climbing environment with 12 anchors at 3 height levels
 """
 
 import sys
@@ -36,8 +38,8 @@ import numpy as np
 import mujoco
 import mujoco.viewer
 
-# Import joystick driver
-sys.path.insert(0, str(Path(__file__).parent))
+# Import joystick driver and attachment controller from parent directory
+sys.path.insert(0, str(Path(__file__).parent.parent))
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
 from DEV.attachment_controller import SimulationConfig, RobotAttachmentController
 
@@ -46,7 +48,7 @@ from DEV.attachment_controller import SimulationConfig, RobotAttachmentControlle
 # Configuration
 # ============================================================================
 
-MODEL_REL_PATH = "./ReachBot4X/SIM/RB4X/env_flat_w_dynamic_anchors.xml"
+MODEL_REL_PATH = "./ReachBot4X/SIM/RB4X/vertical_climbing.xml"
 
 # Locomotion Control Gains
 K_RMRC = 5.0             # task-space proportional gain during anchoring (1/s)
@@ -109,19 +111,13 @@ def get_sites_and_geoms_and_mocap(model):
         "4": mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "boomEndSite4"),
     }
 
-    region_site_ids = {
-        "1": mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "region_site1"),
-        "2": mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "region_site2"),
-        "3": mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "region_site3"),
-        "4": mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "region_site4"),
-    }
+    region_site_ids = {}
+    for i in range(1, 13):  # regions 1-12
+        region_site_ids[str(i)] = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, f"region_site{i}")
 
-    region_geom_ids = {
-        "1": mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "region1_geom"),
-        "2": mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "region2_geom"),
-        "3": mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "region3_geom"),
-        "4": mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "region4_geom"),
-    }
+    region_geom_ids = {}
+    for i in range(1, 13):  # regions 1-12
+        region_geom_ids[str(i)] = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, f"region{i}_geom")
 
     anchor_mocap_ids = {}
     for key in ("1", "2", "3", "4"):
@@ -152,6 +148,26 @@ def set_region_color(model, geom_id, rgba):
     """Update region visualization color."""
     model.geom_rgba[geom_id] = rgba
 
+
+
+def detach_foot(
+    controller: RobotAttachmentController,
+    model,
+    data,
+    foot_key: str,
+    eq_ids,
+    region_geom_id: int,
+    config: SimulationConfig,
+):
+    """Detach a foot from its current anchor."""
+    if controller.is_foot_attached(foot_key):
+        controller.detach_foot(foot_key)
+        # Deactivate equality constraint
+        data.eq_active[eq_ids[foot_key]] = 0
+        # Reset region color to inactive
+        set_region_color(model, region_geom_id, config.region_inactive_rgba)
+        return True
+    return False
 
 def get_mainbody_pose(model, data):
     """
@@ -683,6 +699,78 @@ def compute_body_jacobian(
     return J_body
 
 
+def compute_body_jacobian_subset(
+    model,
+    data,
+    foot_site_ids_subset: dict,
+    arm_qpos_indices_subset: dict,
+    damping: float = DAMPING,
+    adaptive_damping: bool = ADAPTIVE_DAMPING
+):
+    """
+    Compute body Jacobian for a subset of arms (e.g., 3 anchored arms).
+    Same logic as compute_body_jacobian but works with any number of arms.
+    
+    Returns:
+        J_body: (6×3N) body Jacobian where N is number of arms in subset
+    """
+    Jb_stack = []
+    n_arms = len(foot_site_ids_subset)
+    n_joints = n_arms * 3
+    Jq_block = np.zeros((n_joints, n_joints), dtype=float)
+    Jq_list = []
+    
+    for i, k in enumerate(sorted(foot_site_ids_subset.keys())):
+        # Compute Jb (3×6) and Jq (3×3) for arm k
+        Jb, Jq = compute_body_and_joint_jacobians(
+            model=model,
+            data=data,
+            arm_key=k,
+            foot_site_id=foot_site_ids_subset[k],
+            qpos_indices=arm_qpos_indices_subset[k]
+        )
+        
+        Jb_stack.append(Jb)
+        Jq_list.append(Jq)
+        
+        # Place Jq on diagonal
+        row_start = i * 3
+        col_start = i * 3
+        Jq_block[row_start:row_start+3, col_start:col_start+3] = Jq
+    
+    # Stack body Jacobians: 3N×6
+    Jb_all = np.vstack(Jb_stack)
+    
+    # Adaptive damping
+    effective_damping = damping
+    if adaptive_damping:
+        try:
+            singular_values = np.linalg.svd(Jb_all, compute_uv=False)
+            min_sv = np.min(singular_values)
+            
+            min_arm_manipulability = float('inf')
+            for Jq in Jq_list:
+                mu_arm = compute_manipulability(Jq)
+                min_arm_manipulability = min(min_arm_manipulability, mu_arm)
+            
+            if min_sv < MANIPULABILITY_THRESHOLD or min_arm_manipulability < MANIPULABILITY_THRESHOLD:
+                critical_value = min(min_sv, min_arm_manipulability)
+                scale = MANIPULABILITY_THRESHOLD / max(critical_value, 1e-6)
+                effective_damping = damping * min(scale, 10.0)
+        except:
+            pass
+    
+    # Damped pseudoinverse: 6×3N
+    JbT = Jb_all.T  # 6×3N
+    A = JbT @ Jb_all + (effective_damping ** 2) * np.eye(6)  # 6×6
+    Jb_pinv = np.linalg.solve(A, JbT)  # 6×3N
+    
+    # Body Jacobian: (6×3N) @ (3N×3N) = (6×3N)
+    J_body = Jb_pinv @ Jq_block
+    
+    return J_body
+
+
 # ============================================================================
 # Joystick Monitor (100 Hz)
 # ============================================================================
@@ -747,79 +835,25 @@ diagnostics_state = DiagnosticsState()
 
 
 def diagnostics_thread():
-    """
-    Background thread: Print body Jacobian at 10 Hz.
-    Stops when ESTOP is triggered or diagnostics_state is stopped.
-    """
+    """Background thread: placeholder for optional diagnostics."""
     global ESTOP_TRIGGERED
-    
-    dt = 0.1  # 10 Hz
-    
-    # Initialize first call flag
-    first_call = True
-    
-    # Cache foot site IDs and joint indices (computed once)
-    foot_site_ids = None
-    arm_qpos_indices = None
-    
     while diagnostics_state.is_running() and not ESTOP_TRIGGERED:
-        model, data = diagnostics_state.get()
-        
-        if model is not None and data is not None:
-            try:
-                # Compute IDs on first iteration
-                if foot_site_ids is None:
-                    foot_site_ids = {
-                        "1": mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "boomEndSite1"),
-                        "2": mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "boomEndSite2"),
-                        "3": mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "boomEndSite3"),
-                        "4": mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "boomEndSite4"),
-                    }
-                    arm_qpos_indices = {k: get_arm_joint_qpos_indices(model, k) for k in ("1", "2", "3", "4")}
-                
-                # Time the body Jacobian computation
-                t_start = time.perf_counter()
-                J_body = compute_body_jacobian(model, data, foot_site_ids, arm_qpos_indices)
-                t_end = time.perf_counter()
-                
-                # Compute elapsed time in milliseconds
-                elapsed_ms = (t_end - t_start) * 1000.0
-                
-                # Clear screen and reposition cursor
-                if not first_call:
-                    print("\033[H\033[J", end="")
-                else:
-                    first_call = False
-                
-                print("=== Body Jacobian J_body (6×12) @ 10Hz ===")
-                print("Maps joint velocities q̇ (12×1) to body twist [v_B; ω_B] (6×1)")
-                print(f"Computation time: {elapsed_ms:6.2f} ms")
-                print()
-                # Format matrix with 3 decimal places, no scientific notation
-                with np.printoptions(precision=3, suppress=True, formatter={'float': lambda x: f'{x:8.3f}'}):
-                    print(J_body)
-                print()
-                print("===========================================")
-                
-            except Exception as e:
-                print(f"[Diagnostics] Error: {e}")
-        
-        time.sleep(dt)
+        time.sleep(0.1)
 
 
 def joystick_monitor_thread():
     """
     Background thread: Monitor joystick at 100 Hz.
     - Y button: starts anchoring sequence
-    - RT trigger: +Y locomotion (during locomotion phase)
-    - LT trigger: -Y locomotion (during locomotion phase)
+    - RT trigger: +Z locomotion (during locomotion phase)
+    - LT trigger: -Z locomotion (during locomotion phase)
+    - LX/LY: X/Y locomotion (during locomotion phase)
     - X button: E-STOP
     """
     global ESTOP_TRIGGERED, SEQUENCE_STARTED
 
     try:
         js = joystick_connect()
-        print("[Joystick Monitor] Connected. Waiting for Y to start anchoring...")
     except RuntimeError as e:
         print(f"[Joystick Monitor] ERROR: {e}")
         return
@@ -833,7 +867,6 @@ def joystick_monitor_thread():
             # Y button starts sequence
             if data["YB"] and not SEQUENCE_STARTED:
                 SEQUENCE_STARTED = True
-                print("[Joystick] Y pressed → ANCHORING SEQUENCE STARTED")
 
             # X button triggers E-STOP
             if data["XB"]:
@@ -871,6 +904,7 @@ def try_attach(
     region_geom_id: int,
     anchor_mocap_id: int,
     config: SimulationConfig,
+    region_key: str = None,
 ) -> bool:
     """Auto-attach (anchor) if within region sphere. Returns True if attached this step."""
     foot_pos = data.site_xpos[foot_site_id]
@@ -880,6 +914,8 @@ def try_attach(
 
     if dist_sq < config.region_radius * config.region_radius:
         if not controller.is_foot_attached(foot_key):
+            # Always use foot_key for attachment tracking (controller only knows 4 regions)
+            # The actual region is tracked separately via region_key parameter
             controller.attach_foot_to_region(foot_key, foot_key)
 
             # Teleport anchor mocap and activate equality
@@ -1084,75 +1120,6 @@ def rmrc_step_arm_anchoring(
 
     return q_cmd
 
-def rmrc_locomotion_step_arm(
-    model,
-    data,
-    arm_base_body_id: int,
-    foot_site_id: int,
-    qpos_indices: list[int],
-    act_ids: list[int],
-    q_cmd: np.ndarray,
-    dt: float,
-    v_target_arm: np.ndarray,
-    damping: float = DAMPING,
-    adaptive_damping: bool = ADAPTIVE_DAMPING,
-):
-    """
-    Execute one RMRC step for a single arm with task-space velocity command in arm frame.
-    
-    Args:
-        v_target_arm: desired task-space velocity in arm base frame [vx, vy, vz] (m/s)
-    """
-    q1_idx, q2_idx, q3_idx = qpos_indices
-
-    theta1 = float(data.qpos[q1_idx])
-    theta2 = float(data.qpos[q2_idx])
-    d3 = float(data.qpos[q3_idx])
-
-    # Compute Jacobian in arm frame
-    J = compute_local_jacobian(theta1, theta2, d3)
-
-    # Task-space velocity in arm frame
-    v = v_target_arm
-
-    # Adaptive damping based on manipulability
-    effective_damping = damping
-    if adaptive_damping:
-        mu = compute_manipulability(J)
-        if mu < MANIPULABILITY_THRESHOLD:
-            # Increase damping near singularities
-            scale = MANIPULABILITY_THRESHOLD / max(mu, 1e-6)
-            effective_damping = damping * min(scale, 10.0)  # cap at 10x base damping
-
-    # Damped least-squares pseudoinverse
-    JJt = J @ J.T
-    A = JJt + (effective_damping ** 2) * np.eye(3)
-    try:
-        qdot = J.T @ np.linalg.solve(A, v)
-    except np.linalg.LinAlgError:
-        qdot, *_ = np.linalg.lstsq(J, v, rcond=None)
-    
-    # Limit joint velocities
-    qdot = np.clip(qdot, -MAX_JOINT_VELOCITY, MAX_JOINT_VELOCITY)
-
-    # Euler integration
-    dq = qdot * dt
-
-    # Optional per-step clamps
-    if MAX_DTHETA_STEP is not None:
-        dq[0] = float(np.clip(dq[0], -MAX_DTHETA_STEP, MAX_DTHETA_STEP))
-        dq[1] = float(np.clip(dq[1], -MAX_DTHETA_STEP, MAX_DTHETA_STEP))
-    if MAX_DD3_STEP is not None:
-        dq[2] = float(np.clip(dq[2], -MAX_DD3_STEP, MAX_DD3_STEP))
-
-    q_cmd = q_cmd + dq
-
-    # Send position commands
-    for i, aid in enumerate(act_ids):
-        data.ctrl[aid] = q_cmd[i]
-
-    return q_cmd
-
 
 # ============================================================================
 # Main Controller
@@ -1194,24 +1161,44 @@ def run_controller(
         q1, q2, q3 = arm_qpos_indices[k]
         q_cmds[k] = np.array([data.qpos[q1], data.qpos[q2], data.qpos[q3]], dtype=float)
 
-    # Sequence definition
-    sequence = ["1", "3", "2", "4"]
+    # Extended sequence definition for vertical climbing
+    # Format: (arm_key, region_key, needs_detach)
+    sequence = [
+        # Layer 1 (z=0.5): Initial anchoring
+        ("1", "1", False),
+        ("2", "2", False),
+        ("3", "3", False),
+        ("4", "4", False),
+        # Layer 2 (z=1.0): Detach and re-anchor
+        ("1", "5", True),
+        ("2", "6", True),
+        ("3", "7", True),
+        ("4", "8", True),
+        # Layer 3 (z=1.5): Detach and re-anchor
+        ("1", "9", True),
+        ("2", "10", True),
+        ("3", "11", True),
+        ("4", "12", True),
+    ]
+    
+    # Track which region each arm is currently attached to
+    current_arm_regions = {"1": None, "2": None, "3": None, "4": None}
+    
     seq_idx = 0
     anchoring_phase = True
+    detach_phase = False  # Flag to control detachment before anchoring
+    qp_positioning_phase = False  # Flag for QP body positioning between anchors
+    qp_position_converged = False  # Flag to track if QP positioning is done
     locomotion_active = False
+    
+    # QP positioning parameters
+    QP_POS_TOL = 0.02  # 2cm tolerance for position convergence (m)
+    QP_ORIENT_TOL = 0.05  # orientation error tolerance (rad)
+    Z_OFFSET_FROM_ANCHORS = 0.25  # body should be 0.25m below average anchor position
 
-    print("\n" + "=" * 60)
-    print("RMRC 4-Arm Anchoring + Synchronized Locomotion")
-    print("=" * 60)
-    print("Anchoring Sequence: 1->1, 3->3, 2->2, 4->4")
-    print("Press Y on joystick to start anchoring")
-    print("After anchoring:")
-    print("  LX → ±X velocity (world frame)")
-    print("  LY → ±Y velocity (world frame)")
-    print("  RT → +Z (up in world frame)")
-    print("  LT → -Z (down in world frame)")
-    print("  X → E-STOP")
-    print("=" * 60 + "\n")
+    
+    print("RMRC 4-Arm Vertical Climbing - Press Y to start, X to E-STOP\n")
+
 
     # Start joystick monitor thread
     monitor_thread = threading.Thread(target=joystick_monitor_thread, daemon=True)
@@ -1220,8 +1207,6 @@ def run_controller(
     # Start diagnostics thread (10 Hz pose printing)
     diag_thread = threading.Thread(target=diagnostics_thread, daemon=True)
     diag_thread.start()
-
-    print("Opening MuJoCo viewer...")
 
     with mujoco.viewer.launch_passive(model, data) as viewer:
         while viewer.is_running():
@@ -1237,53 +1222,142 @@ def run_controller(
 
             # ========== ANCHORING PHASE ==========
             if anchoring_phase:
-                # Always allow attachment checks for all feet
-                for k in ("1", "2", "3", "4"):
+                if SEQUENCE_STARTED and seq_idx < len(sequence):
+                    arm_key, region_key, needs_detach = sequence[seq_idx]
+                    
+                    # Step 1: Detach if needed
+                    if needs_detach and not detach_phase:
+                        # Find the old region to reset its color
+                        if seq_idx >= 4:  # After first layer
+                            old_region_key = sequence[seq_idx - 4][1]  # Get region from 4 steps ago
+                            detach_foot(
+                                controller=controller,
+                                model=model,
+                                data=data,
+                                foot_key=arm_key,
+                                eq_ids=eq_ids,
+                                region_geom_id=region_geom_ids[old_region_key],
+                                config=config,
+                            )
+                        detach_phase = True
+                    
+                    # Step 2: Check if already attached to target region
                     attached_now = try_attach(
                         controller=controller,
                         model=model,
                         data=data,
-                        foot_key=k,
+                        foot_key=arm_key,
                         eq_ids=eq_ids,
-                        foot_site_id=foot_site_ids[k],
-                        region_site_id=region_site_ids[k],
-                        region_geom_id=region_geom_ids[k],
-                        anchor_mocap_id=anchor_mocap_ids[k],
+                        foot_site_id=foot_site_ids[arm_key],
+                        region_site_id=region_site_ids[region_key],
+                        region_geom_id=region_geom_ids[region_key],
+                        anchor_mocap_id=anchor_mocap_ids[arm_key],
                         config=config,
+                        region_key=region_key,
                     )
+                    
                     if attached_now:
-                        print(f"[SUCCESS] Foot {k} anchored to region {k}.")
-
-                # Sequential anchoring phase
-                if SEQUENCE_STARTED and seq_idx < len(sequence):
-                    k = sequence[seq_idx]
-
-                    # Skip if already attached
-                    if controller.is_foot_attached(k):
+                        current_arm_regions[arm_key] = region_key
                         seq_idx += 1
-                        if seq_idx < len(sequence):
-                            nxt = sequence[seq_idx]
-                            print(f"[RMRC] Advancing to arm{nxt} -> region{nxt}")
-                        else:
-                            print("[RMRC] Anchoring sequence complete!")
-                            print("[RMRC] Entering locomotion control mode...")
+                        detach_phase = False
+                        
+                        if seq_idx == 4 or (seq_idx > 4 and seq_idx <= len(sequence)):
                             anchoring_phase = False
-                            locomotion_active = True
+                            qp_positioning_phase = True
+                            qp_position_converged = False
                     else:
+                        # Step 3: Drive arm toward target region
                         dt = float(model.opt.timestep)
-                        q_cmds[k] = rmrc_step_arm_anchoring(
+                        q_cmds[arm_key] = rmrc_step_arm_anchoring(
                             model=model,
                             data=data,
-                            arm_base_body_id=arm_base_body_ids[k],
-                            foot_site_id=foot_site_ids[k],
-                            region_site_id=region_site_ids[k],
-                            qpos_indices=arm_qpos_indices[k],
-                            act_ids=arm_act_ids[k],
-                            q_cmd=q_cmds[k],
+                            arm_base_body_id=arm_base_body_ids[arm_key],
+                            foot_site_id=foot_site_ids[arm_key],
+                            region_site_id=region_site_ids[region_key],
+                            qpos_indices=arm_qpos_indices[arm_key],
+                            act_ids=arm_act_ids[arm_key],
+                            q_cmd=q_cmds[arm_key],
                             dt=dt,
                         )
+            
+            # ========== QP BODY POSITIONING PHASE ==========
+            elif qp_positioning_phase:
+                # Compute target position: average of current anchor positions - 0.25z
+                anchor_positions = []
+                for arm_k, region_k in current_arm_regions.items():
+                    if region_k is not None:
+                        anchor_pos = data.site_xpos[region_site_ids[region_k]].copy()
+                        anchor_positions.append(anchor_pos)
+                
+                if len(anchor_positions) == 4:
+                    # Compute average anchor position
+                    avg_anchor_pos = np.mean(anchor_positions, axis=0)
+                    
+                    # Target body position: average - 0.25 in z
+                    target_body_pos = avg_anchor_pos.copy()
+                    target_body_pos[2] -= Z_OFFSET_FROM_ANCHORS
+                    
+                    # Get current body pose
+                    T_body = get_mainbody_pose(model, data)
+                    current_body_pos = T_body[:3, 3]
+                    R_current = T_body[:3, :3]
+                    
+                    # Compute position error
+                    pos_error = target_body_pos - current_body_pos
+                    pos_error_norm = np.linalg.norm(pos_error)
+                    
+                    # Compute orientation error (keep level)
+                    R_desired = np.eye(3)
+                    e_omega = compute_orientation_error(R_current, R_desired)
+                    orient_error_norm = np.linalg.norm(e_omega)
+                    
+                    if pos_error_norm < QP_POS_TOL and orient_error_norm < QP_ORIENT_TOL:
+                        if not qp_position_converged:
+                            qp_position_converged = True
+                            if seq_idx >= len(sequence):
+                                print("✓ Climbing complete")
+                                qp_positioning_phase = False
+                                locomotion_active = True
+                            else:
+                                qp_positioning_phase = False
+                                anchoring_phase = True
+                    else:
+                        # Compute desired body twist
+                        # Proportional control on position
+                        # NOTE: Negate error because feet are anchored - positive error requires negative velocity
+                        v_world = -K_RMRC * pos_error
+                        
+                        # Saturate velocity
+                        v_norm = np.linalg.norm(v_world)
+                        if v_norm > V_MAX_RMRC:
+                            v_world = v_world * (V_MAX_RMRC / v_norm)
+                        
+                        # Orientation feedback
+                        omega_cmd = K_ORIENTATION * e_omega
+                        omega_norm = np.linalg.norm(omega_cmd)
+                        if omega_norm > MAX_ANGULAR_VEL:
+                            omega_cmd = omega_cmd * (MAX_ANGULAR_VEL / omega_norm)
+                        
+                        # Form 6D body twist
+                        V_B_ref = np.array([v_world[0], v_world[1], v_world[2], 
+                                           omega_cmd[0], omega_cmd[1], omega_cmd[2]], dtype=float)
+                        
+                        # Compute body Jacobian and apply QP control
+                        dt = float(model.opt.timestep)
+                        J_body = compute_body_jacobian(model, data, foot_site_ids, arm_qpos_indices)
+                        
+                        q_cmds = qp_locomotion_step(
+                            model=model,
+                            data=data,
+                            J_body=J_body,
+                            V_B_ref=V_B_ref,
+                            arm_qpos_indices=arm_qpos_indices,
+                            arm_act_ids=arm_act_ids,
+                            q_cmds=q_cmds,
+                            dt=dt
+                        )
 
-            # ========== LOCOMOTION PHASE ==========
+            # ========== LOCOMOTION PHASE (JOYSTICK TELEOP) ==========
             elif locomotion_active:
                 if all(controller.is_foot_attached(k) for k in ("1", "2", "3", "4")):
                     # Get joystick state
@@ -1296,27 +1370,22 @@ def run_controller(
 
                     # Compute desired Z velocity in WORLD frame
                     # RT → +Z (up), LT → -Z (down)
-                    # Both pressed → no motion
                     if rt > 1e-6 and lt > 1e-6:
                         vz_world = 0.0
-                    # RT only
                     elif rt > 1e-6:
                         vz_world = -K_LOCOMOTION * rt
-                    # LT only
                     elif lt > 1e-6:
                         vz_world = K_LOCOMOTION * lt
-                    # Neither pressed
                     else:
                         vz_world = 0.0
 
                     # Compute orientation feedback to keep body level
                     T_body = get_mainbody_pose(model, data)
                     R_current = T_body[:3, :3]
-                    R_desired = np.eye(3)  # Identity = level/flat orientation
+                    R_desired = np.eye(3)
                     e_omega = compute_orientation_error(R_current, R_desired)
-                    omega_cmd = K_ORIENTATION * e_omega  # Proportional feedback
+                    omega_cmd = K_ORIENTATION * e_omega
                     
-                    # Saturate angular velocity command to prevent instability
                     omega_norm = np.linalg.norm(omega_cmd)
                     if omega_norm > MAX_ANGULAR_VEL:
                         omega_cmd = omega_cmd * (MAX_ANGULAR_VEL / omega_norm)
@@ -1324,15 +1393,9 @@ def run_controller(
                     # Apply QP-based body velocity control
                     if abs(vx_world) > 1e-9 or abs(vy_world) > 1e-9 or abs(vz_world) > 1e-9 or np.linalg.norm(omega_cmd) > 1e-9:
                         dt = float(model.opt.timestep)
-                        
-                        # Form desired body twist (6D): [v_B; ω_B]
-                        # Translation from joystick + orientation regulation from feedback
                         V_B_ref = np.array([vx_world, vy_world, vz_world, omega_cmd[0], omega_cmd[1], omega_cmd[2]], dtype=float)
-                        
-                        # Compute body Jacobian
                         J_body = compute_body_jacobian(model, data, foot_site_ids, arm_qpos_indices)
                         
-                        # Solve QP and update all joint commands
                         q_cmds = qp_locomotion_step(
                             model=model,
                             data=data,
@@ -1356,7 +1419,8 @@ def run_controller(
 
 def main():
     """Load model and run controller."""
-    config = SimulationConfig(region_radius=0.1, target_rtf=1.0)
+    # Region radius set to 0.05m (half of original 0.1m)
+    config = SimulationConfig(region_radius=0.05, target_rtf=1.0)
 
     model, data = load_model(Path(MODEL_REL_PATH))
     eq_ids = get_equalities(model)
