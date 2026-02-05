@@ -24,6 +24,8 @@ joystick_lock = threading.Lock()
 velocity = np.zeros((6, 1))
 velocity_lock = threading.Lock()
 
+data_lock = threading.Lock()  # Protects MuJoCo data access
+
 running = True
 running_lock = threading.Lock()
 
@@ -66,8 +68,9 @@ def camera_render_thread(model, data):
     try:
         while running:
             # Update scene and render from wrist camera
-            renderer.update_scene(data, camera="wrist_cam")
-            rgb = renderer.render()
+            with data_lock:
+                renderer.update_scene(data, camera="wrist_cam")
+                rgb = renderer.render()
             
             # Convert to BGR for OpenCV
             bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
@@ -249,7 +252,7 @@ def main():
             joint_velocity = Jv_inv @ velocity
             
             # Integrate joint positions
-            dt = 0.0075
+            dt = 0.002
             roll_pos += dt * joint_velocity[0, 0]
             pitch_pos += dt * joint_velocity[1, 0]
             d3_pos += dt * joint_velocity[2, 0]
@@ -260,7 +263,7 @@ def main():
             
             # Apply joint limits
             roll_pos = np.clip(roll_pos, -np.pi/2, np.pi/2)
-            pitch_pos = np.clip(pitch_pos, 0, np.pi/2)
+            pitch_pos = np.clip(pitch_pos, -np.pi/4, np.pi/2)
             d3_pos = np.clip(d3_pos, 0.2, 3.0)
             theta5_pos = max(theta5_pos, -1.7)  # Wrist pitch limit
             gripper_pos = np.clip(gripper_pos, 0.0, 0.05)
@@ -275,14 +278,13 @@ def main():
             data.ctrl[actuator_ids['actuator_left_grip']] = gripper_pos
             data.ctrl[actuator_ids['actuator_right_grip']] = gripper_pos
             
-            # Step simulation
-            mujoco.mj_step(model, data)
-            
-            # Update viewer
-            viewer.sync()
+            # Step simulation and update viewer (protected by lock)
+            with data_lock:
+                mujoco.mj_step(model, data)
+                viewer.sync()
             
             # Match hardware loop rate
-            time.sleep(0.005)
+            time.sleep(0.001)
     
     print("\033[93mSIM: Simulation ended\033[0m")
 
