@@ -1,32 +1,22 @@
 """
-Resolved Motion Rate Control (RMRC) - Vertical Climbing Simulation.
+Horizontal Crawling Simulation - Simplified.
 
 Behavior:
-- Awaits joystick 'Y' press to begin sequential anchoring sequence
-- Drives arms 1->3->2->4 one at a time until all anchored (first 4 anchors)
-- Once all anchored, enters locomotion control mode
-- LX/LY: X/Y velocity (task-space, all arms synchronized)
-- RT trigger: +Z velocity (up)
-- LT trigger: -Z velocity (down)
-- Both pressed simultaneously: no Z motion
+- Press Y to anchor all 4 arms (arm1→region1, arm2→region2, arm3→region3, arm4→region4)
+- Once all 4 anchored, QP body controller steers to average of anchor positions + 0.25 in Z
+- Maintains level orientation (zero angular velocity, identity rotation)
 - X button: E-STOP (instant quit)
 
-Control law (sequencing phase):
-  e = x_region_k - x_foot_k                  (all in arm-k base frame)
-  v = Kp * e                                 (task-space velocity)
-  qdot = J^+ v                               (damped least-squares)
-  q_cmd <- q_cmd + qdot * dt                 (Euler)
-
-Control law (locomotion phase):
-  v = K * joystick value  (task-space velocity in world frame)
-  qdot = J^+ v            (damped least-squares per arm)
-  q_cmd <- q_cmd + qdot * dt   (Euler integration)
-
+Control law:
+  Position: target = avg(anchors) + 0.25*z_hat
+  Velocity: v = -K * (current_pos - target)
+  Orientation: omega = -K_orient * orientation_error
+  QP: Solve for joint velocities via body Jacobian
+  
 Notes:
-- All 4 arms move synchronously during locomotion via QP-based control
-- Uses measured foot/region positions from MuJoCo sites
-- Uses analytical position Jacobian (RRP arm kinematics)
-- Vertical climbing environment with 12 anchors at 3 height levels
+- All 4 arms anchored simultaneously
+- Uses QP-based whole-body control
+- Horizontal crawling environment with 12 anchors at z=0
 """
 
 import sys
@@ -48,18 +38,24 @@ from DEV.attachment_controller import SimulationConfig, RobotAttachmentControlle
 # Configuration
 # ============================================================================
 
-MODEL_REL_PATH = "./ReachBot4X/SIM/RB4X/vertical_climbing.xml"
+MODEL_REL_PATH = "./ReachBot4X/SIM/RB4X/horizontal_crawling.xml"
 
-# Locomotion Control Gains
-K_RMRC = 5.0             # task-space proportional gain during anchoring (1/s)
-V_MAX_RMRC = 0.05        # max task-space speed during anchoring (m/s)
-K_LOCOMOTION = 0.05     # gain for trigger-to-velocity mapping (m/s per full trigger)
-K_ORIENTATION = -10.0     # proportional gain for orientation regulation (1/s)
+# Control Gains
+K_POSITION = 5.0        # proportional gain for position control (1/s)
+V_MAX = 0.05            # max translational velocity (m/s)
+K_ORIENTATION = -10.0   # proportional gain for orientation regulation (1/s)
 MAX_ANGULAR_VEL = 0.1   # max angular velocity command (rad/s)
-DAMPING = 5e-2          # base damping for pseudoinverse (increased for stability)
+DAMPING = 5e-2          # base damping for pseudoinverse
 ADAPTIVE_DAMPING = True  # use adaptive damping based on manipulability
 MANIPULABILITY_THRESHOLD = 1e-3  # threshold for singularity detection
-POS_TOL = 0.01          # position error tolerance (m)
+ATTACHMENT_RADIUS = 0.20  # attachment radius for anchoring (m)
+Z_OFFSET_ABOVE_ANCHORS = -0.35  # body should be 0.5m above average anchor position
+POS_TOL = 0.01          # position error tolerance for anchoring (m)
+
+# Per-step joint increment clamps
+MAX_DTHETA_STEP = 0.05  # rad/step (limit joint velocities)
+MAX_DD3_STEP = 0.01     # m/step (limit prismatic joint velocity)
+MAX_JOINT_VELOCITY = 0.5  # rad/s or m/s (additional velocity limit)
 
 # Per-step joint increment clamps
 MAX_DTHETA_STEP = 0.05  # rad/step (limit joint velocities)
@@ -69,6 +65,18 @@ MAX_JOINT_VELOCITY = 0.5  # rad/s or m/s (additional velocity limit)
 # Global state for joystick control and E-stop
 ESTOP_TRIGGERED = False
 SEQUENCE_STARTED = False
+
+# Crawling sequences for each arm
+ARM_SEQUENCES = {
+    "1": ["1", "5", "7", "9", "11"],  # Set A progression
+    "2": ["2", "6", "8", "10", "12"],  # Set B progression
+    "3": ["3", "1", "5", "7", "9"],              # Set A progression (stops at reg9)
+    "4": ["4", "2", "6", "8", "10"],             # Set B progression (stops at reg10)
+}
+
+# QP convergence tolerance
+QP_POS_TOL = 0.02  # 2cm tolerance for body positioning (m)
+QP_ORIENT_TOL = 0.05  # orientation error tolerance (rad)
 
 
 # ============================================================================
@@ -1048,8 +1056,8 @@ def rmrc_step_arm_anchoring(
     act_ids: list[int],
     q_cmd: np.ndarray,
     dt: float,
-    kp: float = K_RMRC,
-    v_max: float = V_MAX_RMRC,
+    kp: float = K_POSITION,
+    v_max: float = V_MAX,
     damping: float = DAMPING,
     adaptive_damping: bool = ADAPTIVE_DAMPING,
 ):
@@ -1140,6 +1148,9 @@ def run_controller(
 
     if config is None:
         config = SimulationConfig()
+    
+    # Override attachment radius
+    config.attachment_radius = ATTACHMENT_RADIUS
 
     controller = RobotAttachmentController(config)
     controller.reset()
@@ -1161,43 +1172,26 @@ def run_controller(
         q1, q2, q3 = arm_qpos_indices[k]
         q_cmds[k] = np.array([data.qpos[q1], data.qpos[q2], data.qpos[q3]], dtype=float)
 
-    # Extended sequence definition for vertical climbing
-    # Format: (arm_key, region_key, needs_detach)
-    sequence = [
-        # Layer 1 (z=0.5): Initial anchoring
-        ("1", "1", False),
-        ("2", "2", False),
-        ("3", "3", False),
-        ("4", "4", False),
-        # Layer 2 (z=1.0): Detach and re-anchor
-        ("1", "5", True),
-        ("2", "6", True),
-        ("3", "7", True),
-        ("4", "8", True),
-        # Layer 3 (z=1.5): Detach and re-anchor
-        ("1", "9", True),
-        ("2", "10", True),
-        ("3", "11", True),
-        ("4", "12", True),
-    ]
+    # State machine for crawling
+    initial_anchoring_sequence = [("1", "1"), ("2", "2"), ("3", "3"), ("4", "4")]
+    initial_seq_idx = 0
+    initial_anchoring_done = False
     
-    # Track which region each arm is currently attached to
-    current_arm_regions = {"1": None, "2": None, "3": None, "4": None}
+    # Tracking current arm sequence indices
+    arm_seq_indices = {"1": 0, "2": 0, "3": 0, "4": 0}  # Track position in each arm's sequence
     
-    seq_idx = 0
-    anchoring_phase = True
-    detach_phase = False  # Flag to control detachment before anchoring
-    qp_positioning_phase = False  # Flag for QP body positioning between anchors
-    qp_position_converged = False  # Flag to track if QP positioning is done
-    locomotion_active = False
+    # Crawling state machine
+    crawling_arm_cycle = ["1", "2", "3", "4"]  # Cycle through arms
+    crawling_cycle_idx = 0
+    crawling_active = False
+    current_crawl_arm = None
+    crawl_unanchored = False  # Track if current arm has been unanchored
+    crawl_moving = False  # Track if RMRC is steering to new anchor
+    crawl_anchored = False  # Track if newly anchored
+    qp_positioning = False  # Track if QP is positioning body
+    qp_converged = False  # Track if QP has converged
     
-    # QP positioning parameters
-    QP_POS_TOL = 0.02  # 2cm tolerance for position convergence (m)
-    QP_ORIENT_TOL = 0.05  # orientation error tolerance (rad)
-    Z_OFFSET_FROM_ANCHORS = 0.25  # body should be 0.25m below average anchor position
-
-    
-    print("RMRC 4-Arm Vertical Climbing - Press Y to start, X to E-STOP\n")
+    print("Horizontal Crawling - Press Y to start sequential anchoring, X to E-STOP\n")
 
 
     # Start joystick monitor thread
@@ -1220,28 +1214,12 @@ def run_controller(
             # Update diagnostics thread with latest data
             diagnostics_state.update(model, data)
 
-            # ========== ANCHORING PHASE ==========
-            if anchoring_phase:
-                if SEQUENCE_STARTED and seq_idx < len(sequence):
-                    arm_key, region_key, needs_detach = sequence[seq_idx]
+            # ========== INITIAL ANCHORING PHASE ==========
+            if SEQUENCE_STARTED and not initial_anchoring_done:
+                if initial_seq_idx < len(initial_anchoring_sequence):
+                    arm_key, region_key = initial_anchoring_sequence[initial_seq_idx]
                     
-                    # Step 1: Detach if needed
-                    if needs_detach and not detach_phase:
-                        # Find the old region to reset its color
-                        if seq_idx >= 4:  # After first layer
-                            old_region_key = sequence[seq_idx - 4][1]  # Get region from 4 steps ago
-                            detach_foot(
-                                controller=controller,
-                                model=model,
-                                data=data,
-                                foot_key=arm_key,
-                                eq_ids=eq_ids,
-                                region_geom_id=region_geom_ids[old_region_key],
-                                config=config,
-                            )
-                        detach_phase = True
-                    
-                    # Step 2: Check if already attached to target region
+                    # Check if already attached
                     attached_now = try_attach(
                         controller=controller,
                         model=model,
@@ -1257,16 +1235,15 @@ def run_controller(
                     )
                     
                     if attached_now:
-                        current_arm_regions[arm_key] = region_key
-                        seq_idx += 1
-                        detach_phase = False
-                        
-                        if seq_idx == 4 or (seq_idx > 4 and seq_idx <= len(sequence)):
-                            anchoring_phase = False
-                            qp_positioning_phase = True
-                            qp_position_converged = False
+                        arm_seq_indices[arm_key] = 0  # Mark starting position in sequence
+                        initial_seq_idx += 1
+                        if initial_seq_idx >= len(initial_anchoring_sequence):
+                            initial_anchoring_done = True
+                            qp_positioning = True
+                            qp_converged = False
+                            print("✓ Initial anchoring complete - running QP to stand up")
                     else:
-                        # Step 3: Drive arm toward target region
+                        # Steer arm toward target region using RMRC
                         dt = float(model.opt.timestep)
                         q_cmds[arm_key] = rmrc_step_arm_anchoring(
                             model=model,
@@ -1279,24 +1256,24 @@ def run_controller(
                             q_cmd=q_cmds[arm_key],
                             dt=dt,
                         )
-            
-            # ========== QP BODY POSITIONING PHASE ==========
-            elif qp_positioning_phase:
-                # Compute target position: average of current anchor positions - 0.25z
+
+            # ========== QP POSITIONING PHASE ==========
+            elif qp_positioning and not qp_converged:
+                # Get current anchor positions
                 anchor_positions = []
-                for arm_k, region_k in current_arm_regions.items():
-                    if region_k is not None:
-                        anchor_pos = data.site_xpos[region_site_ids[region_k]].copy()
+                for arm_k in ["1", "2", "3", "4"]:
+                    if controller.is_foot_attached(arm_k):
+                        # Get the region this arm is attached to
+                        region_idx = arm_seq_indices[arm_k]
+                        region_key = ARM_SEQUENCES[arm_k][region_idx]
+                        anchor_pos = data.site_xpos[region_site_ids[region_key]].copy()
                         anchor_positions.append(anchor_pos)
                 
                 if len(anchor_positions) == 4:
-                    # Compute target position: average XY, minimum Z minus offset
-                    anchor_array = np.array(anchor_positions)
-                    avg_xy = np.mean(anchor_array[:, :2], axis=0)
-                    min_z = np.min(anchor_array[:, 2])
-                    
-                    # Target body position: average XY, min Z - 0.1m
-                    target_body_pos = np.array([avg_xy[0], avg_xy[1], min_z - 0.2], dtype=float)
+                    # Compute target position: average of anchors + 0.5 in z
+                    avg_anchor_pos = np.mean(anchor_positions, axis=0)
+                    target_body_pos = avg_anchor_pos.copy()
+                    target_body_pos[2] += Z_OFFSET_ABOVE_ANCHORS
                     
                     # Get current body pose
                     T_body = get_mainbody_pose(model, data)
@@ -1312,26 +1289,21 @@ def run_controller(
                     e_omega = compute_orientation_error(R_current, R_desired)
                     orient_error_norm = np.linalg.norm(e_omega)
                     
+                    # Check convergence
                     if pos_error_norm < QP_POS_TOL and orient_error_norm < QP_ORIENT_TOL:
-                        if not qp_position_converged:
-                            qp_position_converged = True
-                            if seq_idx >= len(sequence):
-                                print("✓ Climbing complete")
-                                qp_positioning_phase = False
-                                locomotion_active = True
-                            else:
-                                qp_positioning_phase = False
-                                anchoring_phase = True
+                        qp_converged = True
+                        qp_positioning = False
+                        if not crawling_active:
+                            crawling_active = True
+                            print("✓ QP positioning converged - starting crawling sequence")
                     else:
-                        # Compute desired body twist
-                        # Proportional control on position
-                        # NOTE: Negate error because feet are anchored - positive error requires negative velocity
-                        v_world = -K_RMRC * pos_error
+                        # Compute desired velocity (negate error because feet are anchored)
+                        v_world = -K_POSITION * pos_error
                         
                         # Saturate velocity
                         v_norm = np.linalg.norm(v_world)
-                        if v_norm > V_MAX_RMRC:
-                            v_world = v_world * (V_MAX_RMRC / v_norm)
+                        if v_norm > V_MAX:
+                            v_world = v_world * (V_MAX / v_norm)
                         
                         # Orientation feedback
                         omega_cmd = K_ORIENTATION * e_omega
@@ -1358,55 +1330,91 @@ def run_controller(
                             dt=dt
                         )
 
-            # ========== LOCOMOTION PHASE (JOYSTICK TELEOP) ==========
-            elif locomotion_active:
-                if all(controller.is_foot_attached(k) for k in ("1", "2", "3", "4")):
-                    # Get joystick state
-                    rt, lt, lx, ly, _ = joystick_state.get()
-
-                    # Compute desired body velocities in WORLD frame
-                    # LX → ±X, LY → ±Y
-                    vx_world = -K_LOCOMOTION * lx
-                    vy_world = -K_LOCOMOTION * ly
-
-                    # Compute desired Z velocity in WORLD frame
-                    # RT → +Z (up), LT → -Z (down)
-                    if rt > 1e-6 and lt > 1e-6:
-                        vz_world = 0.0
-                    elif rt > 1e-6:
-                        vz_world = -K_LOCOMOTION * rt
-                    elif lt > 1e-6:
-                        vz_world = K_LOCOMOTION * lt
+            # ========== CRAWLING PHASE ==========
+            elif crawling_active:
+                # Get current arm to move
+                current_crawl_arm = crawling_arm_cycle[crawling_cycle_idx]
+                current_region_idx = arm_seq_indices[current_crawl_arm]
+                
+                # Check if this arm has more positions to visit
+                if current_region_idx + 1 >= len(ARM_SEQUENCES[current_crawl_arm]):
+                    # This arm is done, move to next
+                    crawling_cycle_idx = (crawling_cycle_idx + 1) % 4
+                    
+                    # Check if all arms are done
+                    all_done = all(
+                        arm_seq_indices[k] >= len(ARM_SEQUENCES[k]) - 1
+                        for k in ["1", "2", "3", "4"]
+                    )
+                    if all_done:
+                        print("✓ Crawling sequence complete!")
+                        crawling_active = False
+                    continue
+                
+                # State machine for single arm crawl step
+                if not crawl_unanchored:
+                    # Step 1: Detach current arm
+                    old_region_key = ARM_SEQUENCES[current_crawl_arm][current_region_idx]
+                    detach_foot(
+                        controller=controller,
+                        model=model,
+                        data=data,
+                        foot_key=current_crawl_arm,
+                        eq_ids=eq_ids,
+                        region_geom_id=region_geom_ids[old_region_key],
+                        config=config,
+                    )
+                    crawl_unanchored = True
+                    crawl_moving = True
+                    print(f"[Crawl] Unanchored arm {current_crawl_arm} from region {old_region_key}")
+                
+                elif crawl_moving:
+                    # Step 2: RMRC to new anchor
+                    new_region_idx = current_region_idx + 1
+                    new_region_key = ARM_SEQUENCES[current_crawl_arm][new_region_idx]
+                    
+                    # Check if attached to new region
+                    attached_now = try_attach(
+                        controller=controller,
+                        model=model,
+                        data=data,
+                        foot_key=current_crawl_arm,
+                        eq_ids=eq_ids,
+                        foot_site_id=foot_site_ids[current_crawl_arm],
+                        region_site_id=region_site_ids[new_region_key],
+                        region_geom_id=region_geom_ids[new_region_key],
+                        anchor_mocap_id=anchor_mocap_ids[current_crawl_arm],
+                        config=config,
+                        region_key=new_region_key,
+                    )
+                    
+                    if attached_now:
+                        arm_seq_indices[current_crawl_arm] = new_region_idx
+                        crawl_moving = False
+                        crawl_anchored = True
+                        qp_positioning = True
+                        qp_converged = False
+                        print(f"[Crawl] Anchored arm {current_crawl_arm} to region {new_region_key} - running QP")
                     else:
-                        vz_world = 0.0
-
-                    # Compute orientation feedback to keep body level
-                    T_body = get_mainbody_pose(model, data)
-                    R_current = T_body[:3, :3]
-                    R_desired = np.eye(3)
-                    e_omega = compute_orientation_error(R_current, R_desired)
-                    omega_cmd = K_ORIENTATION * e_omega
-                    
-                    omega_norm = np.linalg.norm(omega_cmd)
-                    if omega_norm > MAX_ANGULAR_VEL:
-                        omega_cmd = omega_cmd * (MAX_ANGULAR_VEL / omega_norm)
-                    
-                    # Apply QP-based body velocity control
-                    if abs(vx_world) > 1e-9 or abs(vy_world) > 1e-9 or abs(vz_world) > 1e-9 or np.linalg.norm(omega_cmd) > 1e-9:
+                        # Steer toward new anchor
                         dt = float(model.opt.timestep)
-                        V_B_ref = np.array([vx_world, vy_world, vz_world, omega_cmd[0], omega_cmd[1], omega_cmd[2]], dtype=float)
-                        J_body = compute_body_jacobian(model, data, foot_site_ids, arm_qpos_indices)
-                        
-                        q_cmds = qp_locomotion_step(
+                        q_cmds[current_crawl_arm] = rmrc_step_arm_anchoring(
                             model=model,
                             data=data,
-                            J_body=J_body,
-                            V_B_ref=V_B_ref,
-                            arm_qpos_indices=arm_qpos_indices,
-                            arm_act_ids=arm_act_ids,
-                            q_cmds=q_cmds,
-                            dt=dt
+                            arm_base_body_id=arm_base_body_ids[current_crawl_arm],
+                            foot_site_id=foot_site_ids[current_crawl_arm],
+                            region_site_id=region_site_ids[new_region_key],
+                            qpos_indices=arm_qpos_indices[current_crawl_arm],
+                            act_ids=arm_act_ids[current_crawl_arm],
+                            q_cmd=q_cmds[current_crawl_arm],
+                            dt=dt,
                         )
+                
+                elif crawl_anchored and qp_converged:
+                    # Step 3: QP positioning complete, move to next arm
+                    crawl_unanchored = False
+                    crawl_anchored = False
+                    crawling_cycle_idx = (crawling_cycle_idx + 1) % 4
 
             viewer.sync()
     

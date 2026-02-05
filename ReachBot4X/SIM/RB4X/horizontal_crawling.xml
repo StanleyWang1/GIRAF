@@ -1,0 +1,309 @@
+<?xml version="1.0"?>
+<mujoco model="horizontal_crawling">
+
+  <!-- Compiler -->
+  <compiler angle="degree" autolimits="true"/>
+
+  <!-- Defaults -->
+  <default>
+    <default class="armBase">
+      <geom size=".09 0.02515 0.0025" type="box" pos="0 0 0"
+            rgba="0 .8 0 1" contype="0" conaffinity="0" group="1"/>
+    </default>
+
+    <default class="actuatorRotational">
+      <position forcerange="-25 25" inheritrange="1" kp="35"/>
+
+      <default class="shoulder">
+        <joint type="hinge" axis="0 0 1"
+               damping="0.5" armature="0.005"
+               frictionloss="0.3" limited="true" range="-180 180"/>
+        <geom size="0.075 0.0381 0.055" type="box" pos="0 0 0"
+              rgba="0.7 0.7 0.7 1" mass="0.377"
+              contype="0" conaffinity="0" group="1"/>
+      </default>
+
+      <default class="elbow">
+        <joint type="hinge" axis="1 0 0" pos="0 0 0"
+               damping="0.5" armature="0.005"
+               frictionloss="0.3" limited="true" range="0 230"/>
+        <geom size="0.06313 0.0605" pos="0 0.0158975 0"
+              euler="0 90 0" type="cylinder"
+              rgba="1 0.1 0.1 1" contype="0" conaffinity="0"
+              mass="1.046" group="1"/>
+      </default>
+    </default>
+
+    <default class="actuatorPrismatic">
+      <position forcerange="-476 476" inheritrange="1" kp="2000"/>
+      <default class="prismatic">
+        <joint type="slide" axis="0 1 0"
+               armature="0.05" damping="200" frictionloss="10"
+               limited="true" range="0 1.7"/>
+      </default>
+    </default>
+
+    <default class="armTendon">
+      <tendon width="0.04" rgba="0.1 0.1 0.1 1"/>
+    </default>
+
+    <default class="foot">
+      <!-- RIGID CONTACT -->
+      <geom size="0.05" type="sphere" rgba="0.1 0.1 0.1 1" mass="0.344"
+            friction="5.0 0.01 0.001"
+            solref="0.001 1"
+            solimp="0.99 0.99 0.001"
+            margin="0"/>
+    </default>
+  </default>
+
+  <!-- Visual settings -->
+  <visual>
+    <map force="0.1" zfar="50"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global offwidth="2560" offheight="1440"
+            elevation="-20" azimuth="120"/>
+  </visual>
+
+  <statistic center="2.0 1.6 0.3"/>
+
+  <!-- Assets -->
+  <asset>
+    <texture name="body" type="cube" builtin="flat" mark="cross"
+             width="128" height="128"
+             rgb1="0.8 0.6 0.4" rgb2="0.8 0.6 0.4"
+             markrgb="1 1 1"/>
+    <material name="body" texture="body"
+              texuniform="true" rgba="0.8 0.6 .4 1"/>
+
+    <!-- Grid texture for floor -->
+    <texture name="grid" type="2d" builtin="checker"
+             width="512" height="512"
+             rgb1=".1 .2 .3" rgb2=".2 .3 .4"/>
+    <material name="grid" texture="grid"
+              texrepeat="2 2" texuniform="true"
+              reflectance="0"/>
+  </asset>
+
+  <!-- WORLD -->
+  <worldbody>
+
+    <!-- Optional basis body -->
+    <body name="Basis" pos="0 0 0.5"/>
+
+    <!-- Sun-like light -->
+    <light name="sun" directional="true"
+           pos="0 0 10"
+           dir="0 0 -1"
+           diffuse="1 1 1"
+           specular="0.3 0.3 0.3"/>
+
+    <!-- Ground plane with grid material -->
+    <geom name="floor" type="plane"
+          pos="0 0 0"
+          size="100 100 0.1"
+          material="grid"
+          rgba="1 1 1 1"
+          contype="1" conaffinity="1"
+          friction="1 0.005 0.0001"/>
+
+    <!-- Anchor REGIONS (fixed in world) - 12 anchors for horizontal crawling -->
+    <!-- Layer 1: Starting cross pattern at z = 1.0 -->
+    <body name="region1" pos="0.0  0.8  1.0">
+      <site name="region_site1" pos="0 0 0"/>
+      <geom name="region1_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+    <body name="region2" pos="0.8  0.0  1.0">
+      <site name="region_site2" pos="0 0 0"/>
+      <geom name="region2_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+    <body name="region3" pos="0.0 -0.8  1.0">
+      <site name="region_site3" pos="0 0 0"/>
+      <geom name="region3_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+    <body name="region4" pos="-0.8  0.0  1.0">
+      <site name="region_site4" pos="0 0 0"/>
+      <geom name="region4_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+
+    <!-- Layer 2: Forward progression -->
+    <body name="region5" pos="0.4  1.2  1.0">
+      <site name="region_site5" pos="0 0 0"/>
+      <geom name="region5_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+    <body name="region6" pos="1.2  0.4  1.0">
+      <site name="region_site6" pos="0 0 0"/>
+      <geom name="region6_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+    <body name="region7" pos="1.6  2.4  1.0">
+      <site name="region_site7" pos="0 0 0"/>
+      <geom name="region7_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+    <body name="region8" pos="2.4  1.6  1.0">
+      <site name="region_site8" pos="0 0 0"/>
+      <geom name="region8_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+
+    <!-- Layer 3: Further forward -->
+    <body name="region9" pos="2.4  3.2  1.0">
+      <site name="region_site9" pos="0 0 0"/>
+      <geom name="region9_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+    <body name="region10" pos="3.2  2.4  1.0">
+      <site name="region_site10" pos="0 0 0"/>
+      <geom name="region10_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+    <body name="region11" pos="3.2  4.0  1.0">
+      <site name="region_site11" pos="0 0 0"/>
+      <geom name="region11_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+    <body name="region12" pos="4.0  3.2  1.0">
+      <site name="region_site12" pos="0 0 0"/>
+      <geom name="region12_geom" type="sphere" size="0.05"
+            rgba="0.5 0.5 0.5 0.25"
+            contype="0" conaffinity="0"/>
+    </body>
+
+    <!-- Per-foot anchor bodies (mocap = movable from Python) -->
+    <body mocap="true" name="foot1_anchor_body" pos="0 0 0">
+      <site name="foot1_anchor_site" pos="0 0 0"/>
+    </body>
+    <body mocap="true" name="foot2_anchor_body" pos="0 0 0">
+      <site name="foot2_anchor_site" pos="0 0 0"/>
+    </body>
+    <body mocap="true" name="foot3_anchor_body" pos="0 0 0">
+      <site name="foot3_anchor_site" pos="0 0 0"/>
+    </body>
+    <body mocap="true" name="foot4_anchor_body" pos="0 0 0">
+      <site name="foot4_anchor_site" pos="0 0 0"/>
+    </body>
+
+    <!-- ReachBot body (from separate file) -->
+    <body name="reachbot_mount" pos="0 0 0">
+      <include file="reachbot_body.xml"/>
+    </body>
+
+  </worldbody>
+
+  <!-- Tendons -->
+  <tendon>
+    <spatial name="boomvisual1" class="armTendon">
+      <site site="boomEndSite1"/>
+      <site site="motorSite1"/>
+    </spatial>
+    <spatial name="boomvisual2" class="armTendon">
+      <site site="boomEndSite2"/>
+      <site site="motorSite2"/>
+    </spatial>
+    <spatial name="boomvisual3" class="armTendon">
+      <site site="boomEndSite3"/>
+      <site site="motorSite3"/>
+    </spatial>
+    <spatial name="boomvisual4" class="armTendon">
+      <site site="boomEndSite4"/>
+      <site site="motorSite4"/>
+    </spatial>
+  </tendon>
+
+  <!-- Equality constraints: hard-connect each foot end-site to its anchor site -->
+  <equality>
+    <!-- Feet connect to their own per-foot mocap anchor bodies -->
+    <connect name="foot1_anchor" site1="boomEndSite1" site2="foot1_anchor_site"/>
+    <connect name="foot2_anchor" site1="boomEndSite2" site2="foot2_anchor_site"/>
+    <connect name="foot3_anchor" site1="boomEndSite3" site2="foot3_anchor_site"/>
+    <connect name="foot4_anchor" site1="boomEndSite4" site2="foot4_anchor_site"/>
+  </equality>
+
+  <!-- Actuators -->
+  <actuator>
+    <position class="actuatorRotational" name="motor11" joint="revolver11" /> 
+    <position class="actuatorRotational" name="motor12" joint="revolver12" />
+    <position class="actuatorPrismatic"  name="boomMotor1" joint="prismatic1" />
+    <position class="actuatorRotational" name="motor21" joint="revolver21"/>
+    <position class="actuatorRotational" name="motor22" joint="revolver22" />
+    <position class="actuatorPrismatic"  name="boomMotor2" joint="prismatic2" />
+    <position class="actuatorRotational" name="motor31" joint="revolver31" />
+    <position class="actuatorRotational" name="motor32" joint="revolver32" />
+    <position class="actuatorPrismatic"  name="boomMotor3" joint="prismatic3" />
+    <position class="actuatorRotational" name="motor41" joint="revolver41" />
+    <position class="actuatorRotational" name="motor42" joint="revolver42" />
+    <position class="actuatorPrismatic"  name="boomMotor4" joint="prismatic4" />
+  </actuator>
+
+  <!-- Sensors -->
+  <sensor>
+    <gyro          site="imu" name="gyro"/>
+    <velocimeter   site="imu" name="local_linvel"/>
+    <accelerometer site="imu" name="accelerometer"/>
+
+    <framepos   objtype="site" objname="imu"    name="position"/>
+    <framezaxis objtype="site" objname="imu"    name="upvector"/>
+    <framexaxis objtype="site" objname="imu"    name="forwardvector"/>
+    <framelinvel objtype="site" objname="imu"   name="global_linvel"/>
+    <frameangvel objtype="site" objname="imu"   name="global_angvel"/>
+    <framequat   objtype="site" objname="imu"   name="orientation"/>
+
+    <framelinvel objtype="site" objname="boomEndSite1" name="boomEndSite1_global_linvel"/>
+    <framelinvel objtype="site" objname="boomEndSite2" name="boomEndSite2_global_linvel"/>
+    <framelinvel objtype="site" objname="boomEndSite3" name="boomEndSite3_global_linvel"/>
+    <framelinvel objtype="site" objname="boomEndSite4" name="boomEndSite4_global_linvel"/>
+
+    <framepos objtype="site" objname="boomEndSite1" name="boomEndSite1_pos" reftype="site" refname="imu"/>
+    <framepos objtype="site" objname="boomEndSite2" name="boomEndSite2_pos" reftype="site" refname="imu"/>
+    <framepos objtype="site" objname="boomEndSite3" name="boomEndSite3_pos" reftype="site" refname="imu"/>
+    <framepos objtype="site" objname="boomEndSite4" name="boomEndSite4_pos" reftype="site" refname="imu"/>
+
+    <framepos objtype="site" objname="center" name="head_pos"/>
+  </sensor>
+
+  <!-- Keyframes -->
+  <keyframe>
+    <key name="home" qpos="
+      0 0 0
+      0 0 0 0
+      0 0 0
+      0 0 0
+      0 0 0 
+      0 0 0"
+      ctrl="
+      0 0 0
+      0 0 0
+      0 0 0
+      0 0 0"/>
+    <key name="stand" qpos="
+      0 0 0.43
+      0 0 0 0
+      0 0.7 0.3
+      0 0.7 0.3
+      0 0.7 0.3
+      0 0.7 0.3"
+      ctrl="
+      0 0.7 0.3
+      0 0.7 0.3
+      0 0.7 0.3
+      0 0.7 0.3"/>
+  </keyframe>
+
+</mujoco>

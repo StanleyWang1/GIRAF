@@ -1,0 +1,83 @@
+<mujoco model="cable_manipulator_scene">
+  <compiler angle="radian" meshdir="." autolimits="true"/>
+  
+  <option gravity="0 0 -9.81" timestep="0.001"/>
+  
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="120" elevation="-20"/>
+  </visual>
+  
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="512"/>
+    <texture name="groundplane" type="2d" builtin="checker" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3" width="512" height="512" mark="edge" markrgb="0.8 0.8 0.8"/>
+    <material name="groundplane" texture="groundplane" texrepeat="5 5" texuniform="true" reflectance="0.2"/>
+  </asset>
+  
+  <worldbody>
+    <light pos="0 0 3" dir="0 0 -1" directional="false" diffuse="0.8 0.8 0.8" specular="0.2 0.2 0.2"/>
+    <light pos="2 2 3" dir="-1 -1 -1" directional="false" diffuse="0.4 0.4 0.4" specular="0.1 0.1 0.1"/>
+    <light pos="-2 2 3" dir="1 -1 -1" directional="false" diffuse="0.4 0.4 0.4" specular="0.1 0.1 0.1"/>
+    
+    <geom name="floor" pos="0 0 0" size="5 5 0.1" type="plane" material="groundplane"/>
+    
+    <body name="base_link" pos="0 0 0.1">
+      <geom type="cylinder" size="0.05 0.025" rgba="0.5 0.5 0.5 1"/>
+      <inertial pos="0 0 0" mass="1.0" diaginertia="0.01 0.01 0.01"/>
+      
+      <body name="link1" pos="0 0 0.21">
+        <joint name="joint1" type="hinge" axis="0 0 1" range="-3.14159 3.14159" damping="0.1"/>
+        <geom type="cylinder" size="0.03 0.105" pos="0 0 -0.105" rgba="0.2 0.2 0.8 1"/>
+        <inertial pos="0 0 -0.105" mass="0.5" diaginertia="0.002 0.002 0.0005"/>
+        
+        <body name="link2" pos="0 0 0" quat="0.7071 0.7071 0 0">
+          <joint name="joint2" type="hinge" axis="0 0 1" range="-3.14159 3.14159" damping="0.1"/>
+          <geom type="cylinder" size="0.025 0.025" pos="0 0 0.025" rgba="0.2 0.8 0.2 1"/>
+          <inertial pos="0 0 0.025" mass="0.3" diaginertia="0.0005 0.0005 0.0002"/>
+          
+          <body name="link3" pos="-0.055 0 0" quat="0.5 0.5 0.5 0.5">
+            <joint name="joint3" type="slide" axis="0 0 1" range="0.2 3.0" damping="1.0"/>
+            <geom type="cylinder" size="0.02 0.2" pos="0 0 0.2" rgba="0.8 0.2 0.2 1"/>
+            <inertial pos="0 0 0.2" mass="0.188" diaginertia="0.003 0.003 0.0001"/>
+            
+            <body name="link4" pos="0 0 0" quat="0.9659 0.2588 0 0">
+              <joint name="joint4" type="hinge" axis="0 0 1" range="-3.14159 3.14159" damping="0.05"/>
+              <geom type="cylinder" size="0.02 0.025" pos="0 0 0.025" rgba="0.8 0.8 0.2 1"/>
+              <inertial pos="0 0 0.025" mass="0.2" diaginertia="0.0003 0.0003 0.0001"/>
+              
+              <body name="link5" pos="0 0 0" quat="0.7071 0.7071 0 0">
+                <joint name="joint5" type="hinge" axis="0 0 1" range="-3.14159 3.14159" damping="0.05"/>
+                <geom type="cylinder" size="0.018 0.025" pos="0 0 0.025" rgba="0.2 0.8 0.8 1"/>
+                <inertial pos="0 0 0.025" mass="0.15" diaginertia="0.0002 0.0002 0.0001"/>
+                
+                <body name="link6" pos="0 0 0.133" quat="0.7071 0.7071 0 0">
+                  <joint name="joint6" type="hinge" axis="0 0 1" range="-3.14159 3.14159" damping="0.05"/>
+                  <geom type="cylinder" size="0.015 0.0665" pos="0 0 0.0665" rgba="0.8 0.2 0.8 1"/>
+                  <inertial pos="0 0 0.0665" mass="0.5" diaginertia="0.003 0.003 0.0001"/>
+                  
+                  <!-- End effector site -->
+                  <site name="ee_site" pos="0 0 0.133" size="0.02" rgba="1 0 0 1"/>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  
+  <actuator>
+    <position name="actuator_joint1" joint="joint1" kp="100" ctrlrange="-3.14159 3.14159"/>
+    <position name="actuator_joint2" joint="joint2" kp="100" ctrlrange="-3.14159 3.14159"/>
+    <position name="actuator_joint3" joint="joint3" kp="1000" ctrlrange="0.2 3.0"/>
+    <position name="actuator_joint4" joint="joint4" kp="50" ctrlrange="-3.14159 3.14159"/>
+    <position name="actuator_joint5" joint="joint5" kp="50" ctrlrange="-3.14159 3.14159"/>
+    <position name="actuator_joint6" joint="joint6" kp="50" ctrlrange="-3.14159 3.14159"/>
+  </actuator>
+  
+  <keyframe>
+    <key name="home" qpos="0 0 0.5 0 0 0" ctrl="0 0 0.5 0 0 0"/>
+  </keyframe>
+  
+</mujoco>
