@@ -10,6 +10,7 @@ import threading
 import time
 import os
 import sys
+import cv2
 
 from kinematic_model import num_jacobian
 from joystick_driver import joystick_connect, joystick_read, joystick_disconnect
@@ -42,6 +43,60 @@ def joystick_monitor():
 
     joystick_disconnect(js)
     print("\033[93mSIM: Joystick Disconnected!\033[0m")
+
+## ----------------------------------------------------------------------------------------------------
+# Camera Rendering Thread
+## ----------------------------------------------------------------------------------------------------
+def camera_render_thread(model, data):
+    global running
+    
+    # Camera specs: HFOV 80°, VFOV 55° → aspect ratio = tan(40°)/tan(27.5°) ≈ 1.61
+    width = 640
+    height = int(width / 1.61)  # ~397 pixels
+    
+    # Create renderer for wrist camera
+    renderer = mujoco.Renderer(model, height=height, width=width)
+    
+    print(f"\033[96mSIM: Camera thread started ({width}x{height}, HFOV≈80°, VFOV=55°)\033[0m")
+    
+    loop_count = 0
+    start_time = time.perf_counter()
+    fps = 0.0
+    
+    try:
+        while running:
+            # Update scene and render from wrist camera
+            renderer.update_scene(data, camera="wrist_cam")
+            rgb = renderer.render()
+            
+            # Convert to BGR for OpenCV
+            bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+            
+            # Calculate FPS
+            loop_count += 1
+            if loop_count >= 30:
+                elapsed = time.perf_counter() - start_time
+                fps = loop_count / elapsed
+                loop_count = 0
+                start_time = time.perf_counter()
+            
+            cv2.putText(bgr, f"Wrist Camera - {fps:.1f} FPS", (10, 30), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            
+            # Display
+            cv2.imshow("GIRAF Wrist Camera", bgr)
+            
+            # Check for window close or ESC key
+            if cv2.waitKey(1) & 0xFF == 27:  # ESC key
+                break
+            
+            time.sleep(0.033)  # ~30 FPS for camera
+            
+    except Exception as e:
+        print(f"\033[91mCamera thread error: {e}\033[0m")
+    finally:
+        cv2.destroyAllWindows()
+        print("\033[96mSIM: Camera thread stopped\033[0m")
 
 ## ----------------------------------------------------------------------------------------------------
 # Main Simulation
@@ -79,7 +134,7 @@ def main():
     roll_pos = 0.0
     roll_offset = 0.0
     pitch_pos = 0.0
-    d3_pos = 0.5  # Start at 0.5m extension (simplified from hardware's (55+255+80)/1000)
+    d3_pos = 0.25  # Start at 0.5m extension (simplified from hardware's (55+255+80)/1000)
     theta4_pos = 0.0
     theta5_pos = 0.0
     theta6_pos = 0.0
@@ -105,10 +160,21 @@ def main():
     print("  A/B: Close/Open gripper")
     print("  Menu Left/Right: Roll offset")
     print("  X: Exit")
+    print("\n" * 10)  # Reserve space for status display
     
     # Start joystick thread
     joystick_thread = threading.Thread(target=joystick_monitor, daemon=True)
     joystick_thread.start()
+    
+    # Start camera rendering thread
+    camera_thread = threading.Thread(target=camera_render_thread, args=(model, data), daemon=True)
+    camera_thread.start()
+    
+    # Performance monitoring
+    loop_count = 0
+    start_time = time.perf_counter()
+    last_print_time = time.perf_counter()
+    loop_hz = 0.0
     
     # Launch viewer
     with mujoco.viewer.launch_passive(model, data) as viewer:
@@ -137,9 +203,9 @@ def main():
             # Safety interlock
             if LB and RB:
                 with velocity_lock:
-                    velocity[0] = -0.25 * LY  # X velocity
+                    velocity[0] = 0.25 * LY  # X velocity
                     velocity[1] = -0.25 * LX  # Y velocity
-                    velocity[4] = 0.5 * RY    # WY angular velocity
+                    velocity[4] = -0.5 * RY    # WY angular velocity
                     velocity[5] = -0.5 * RX   # WZ angular velocity
                 
                 if RT and not LT:  # Z up
@@ -170,7 +236,6 @@ def main():
                     velocity = np.zeros((6, 1))
                 gripper_velocity = 0
             
-            print(velocity)
             # Compute inverse Jacobian and joint velocities
             # Note: Adding offsets to match kinematic model frame conventions
             Jv_inv = inverse_jacobian([
@@ -191,7 +256,7 @@ def main():
             theta4_pos += dt * joint_velocity[3, 0]
             theta5_pos += dt * joint_velocity[4, 0]
             theta6_pos += dt * joint_velocity[5, 0]
-            gripper_pos += gripper_velocity * 10  # Scale for responsiveness
+            gripper_pos += gripper_velocity  # Scale for responsiveness
             
             # Apply joint limits
             roll_pos = np.clip(roll_pos, -np.pi/2, np.pi/2)
