@@ -7,7 +7,7 @@
     <geom density="10"/>
     
     <default class="gripper">
-      <geom friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+      <geom friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
     </default>
   </default>
   
@@ -64,7 +64,7 @@
     <light pos="-2 2 3" dir="1 -1 -1" directional="false" diffuse="0.4 0.4 0.4" specular="0.1 0.1 0.1"/>
     
     <geom name="floor" pos="0 0 0" size="5 5 0.1" type="plane" material="groundplane" 
-          friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+          friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
     
     <body name="base" pos="0 0 0">
       <geom name="cylinder1" type="cylinder" fromto="0 0 0 0 0 0.1" size="0.075" rgba="1.0 0.196 0.196 1"/>
@@ -114,71 +114,71 @@
     <body name="011_banana" pos="0.820 -0.237 0.128" euler="0 0 1.40">
       <freejoint/>
       <geom name="011_banana_geom" type="mesh" mesh="011_banana_mesh" material="011_banana_mat"
-            density="60" friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+            density="60" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
     </body>
     <body name="002_master_chef_can" pos="0.868 0.088 0.189" euler="0 0 0.55">
       <freejoint/>
       <geom name="002_master_chef_can_geom" type="mesh" mesh="002_master_chef_can_mesh" material="002_master_chef_can_mat"
-            density="20" friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+            density="20" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
     </body>
     <body name="003_cracker_box" pos="0.711 -0.235 0.122" euler="0 0 3.17">
       <freejoint/>
       <geom name="003_cracker_box_geom" type="mesh" mesh="003_cracker_box_mesh" material="003_cracker_box_mat"
-            density="10" friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+            density="10" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
     </body>
     <body name="005_tomato_soup_can" pos="0.513 -0.151 0.165" euler="0 0 3.42">
       <freejoint/>
       <geom name="005_tomato_soup_can_geom" type="mesh" mesh="005_tomato_soup_can_mesh" material="005_tomato_soup_can_mat"
-            density="30" friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+            density="30" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
     </body>
     <body name="006_mustard_bottle" pos="0.610 0.045 0.181" euler="0 0 0.04">
       <freejoint/>
       <geom name="006_mustard_bottle_geom" type="mesh" mesh="006_mustard_bottle_mesh" material="006_mustard_bottle_mat"
-            density="40" friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+            density="40" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
     </body>
     <body name="024_bowl" pos="0.903 0.099 0.134" euler="0 0 0.98">
       <freejoint/>
       <geom name="024_bowl_geom" type="mesh" mesh="024_bowl_mesh" material="024_bowl_mat"     
-            density="50" friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+            density="50" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
     </body>
     <body name="025_mug" pos="0.979 -0.082 0.109" euler="0 0 0.61">
       <freejoint/>
       <geom name="025_mug_geom" type="mesh" mesh="025_mug_mesh" material="025_mug_mat"        
-            density="60" friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+            density="60" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
     </body>
     <body name="035_power_drill" pos="0.924 0.052 0.181" euler="0 0 4.58">
       <freejoint/>
       <geom name="035_power_drill_geom" type="mesh" mesh="035_power_drill_mesh" material="035_power_drill_mat"
-            density="80" friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+            density="80" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
     </body>
     <body name="037_scissors" pos="0.768 0.237 0.138" euler="0 0 3.47">
       <freejoint/>
       <geom name="037_scissors_geom" type="mesh" mesh="037_scissors_mesh" material="037_scissors_mat"
-            density="70" friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+            density="70" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
     </body>
     <body name="040_large_marker" pos="0.915 0.059 0.186" euler="0 0 3.63">
       <freejoint/>
       <geom name="040_large_marker_geom" type="mesh" mesh="040_large_marker_mesh" material="040_large_marker_mat"
-            density="20" friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+            density="20" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
     </body>
     <body name="021_bleach_cleanser" pos="0.852 -0.227 0.123" euler="0 0 1.82">
       <freejoint/>
       <geom name="021_bleach_cleanser_geom" type="mesh" mesh="021_bleach_cleanser_mesh" material="021_bleach_cleanser_mat"
-            density="40" friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+            density="40" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
     </body>
     
     <!-- Collection Bin -->
     <body name="bin" pos="1.0 0.4 0">
       <geom name="bin_bottom" type="box" size="0.15 0.15 0.005" pos="0 0 0.005" rgba="0.3 0.3 0.35 1" 
-            friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+            friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
       <geom name="bin_wall_front" type="box" size="0.15 0.005 0.08" pos="0 -0.145 0.08" rgba="0.3 0.3 0.35 0.7"
-            friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+            friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
       <geom name="bin_wall_back" type="box" size="0.15 0.005 0.08" pos="0 0.145 0.08" rgba="0.3 0.3 0.35 0.7"
-            friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+            friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
       <geom name="bin_wall_left" type="box" size="0.005 0.14 0.08" pos="-0.145 0 0.08" rgba="0.3 0.3 0.35 0.7"
-            friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+            friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
       <geom name="bin_wall_right" type="box" size="0.005 0.14 0.08" pos="0.145 0 0.08" rgba="0.3 0.3 0.35 0.7"
-            friction="10.0 0.5 0.1" solref="0.001 1" solimp="0.995 0.9995 0.00001" condim="6" margin="0.001"/>
+            friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
     </body>
     
   </worldbody>
