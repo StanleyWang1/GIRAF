@@ -1,4 +1,4 @@
-<mujoco model="GIRAF_bananas">
+<mujoco model="GIRAF_banana">
   <compiler angle="radian" autolimits="true"/>
   
   <option gravity="0 0 -9.81" timestep="0.001" iterations="200" solver="Newton" tolerance="1e-10" noslip_iterations="10"/>
@@ -80,64 +80,10 @@
       </body>
     </body>
     
-    <!-- 10 Bananas -->
-    <body name="banana_1" pos="0.820 -0.237 0.128" euler="0 0 1.40">
-      <freejoint/>
-      <geom name="banana_1_geom" type="mesh" mesh="011_banana_mesh" material="011_banana_mat"
-            density="60" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
-    </body>
-    
-    <body name="banana_2" pos="0.710 -0.215 0.128" euler="0 0 2.10">
-      <freejoint/>
-      <geom name="banana_2_geom" type="mesh" mesh="011_banana_mesh" material="011_banana_mat"
-            density="60" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
-    </body>
-    
-    <body name="banana_3" pos="0.860 -0.200 0.128" euler="0 0 0.85">
-      <freejoint/>
-      <geom name="banana_3_geom" type="mesh" mesh="011_banana_mesh" material="011_banana_mat"
-            density="60" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
-    </body>
-    
-    <body name="banana_4" pos="0.530 -0.165 0.128" euler="0 0 3.20">
-      <freejoint/>
-      <geom name="banana_4_geom" type="mesh" mesh="011_banana_mesh" material="011_banana_mat"
-            density="60" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
-    </body>
-    
-    <body name="banana_5" pos="0.620 0.060 0.128" euler="0 0 0.25">
-      <freejoint/>
-      <geom name="banana_5_geom" type="mesh" mesh="011_banana_mesh" material="011_banana_mat"
-            density="60" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
-    </body>
-    
-    <body name="banana_6" pos="0.870 0.095 0.128" euler="0 0 0.60">
-      <freejoint/>
-      <geom name="banana_6_geom" type="mesh" mesh="011_banana_mesh" material="011_banana_mat"
-            density="60" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
-    </body>
-    
-    <body name="banana_7" pos="0.910 0.070 0.128" euler="0 0 1.80">
-      <freejoint/>
-      <geom name="banana_7_geom" type="mesh" mesh="011_banana_mesh" material="011_banana_mat"
-            density="60" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
-    </body>
-    
-    <body name="banana_8" pos="0.770 0.220 0.128" euler="0 0 3.55">
-      <freejoint/>
-      <geom name="banana_8_geom" type="mesh" mesh="011_banana_mesh" material="011_banana_mat"
-            density="60" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
-    </body>
-    
-    <body name="banana_9" pos="0.950 -0.100 0.128" euler="0 0 0.70">
-      <freejoint/>
-      <geom name="banana_9_geom" type="mesh" mesh="011_banana_mesh" material="011_banana_mat"
-            density="60" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
-    </body>
-    
-    <body name="banana_10" pos="0.650 -0.050 0.128" euler="0 0 2.50">
-      <freejoint/>
-      <geom name="banana_10_geom" type="mesh" mesh="011_banana_mesh" material="011_banana_mat"
+    <!-- Single Banana (position randomized at runtime via qpos) -->
+    <body name="banana" pos="1.0 0.0 0.25">
+      <freejoint name="banana_joint"/>
+      <geom name="banana_geom" type="mesh" mesh="011_banana_mesh" material="011_banana_mat"
             density="60" friction="1.5 0.5 0.1" solref="0.01 1" solimp="0.95 0.98 0.0001" condim="4" margin="0.001"/>
     </body>
     
