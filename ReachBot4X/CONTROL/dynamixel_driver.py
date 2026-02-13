@@ -28,7 +28,6 @@ def dynamixel_connect():
     group_sync_write = GroupSyncWrite(controller.port_handler, controller.packet_handler, GOAL_POSITION[0], GOAL_POSITION[1])
 
     # --------------------------------------------------
-    # Reboot WRIST motors to ensure clean startup
     for motor_id in [ARM1_ROLL, ARM1_PITCH, ARM1_BOOM, ARM2_ROLL, ARM2_PITCH, ARM2_BOOM, ARM4_ROLL, ARM4_PITCH, ARM4_BOOM]:
         dxl_comm_result, dxl_error = controller.packet_handler.reboot(controller.port_handler, motor_id)
         if dxl_comm_result != COMM_SUCCESS:

@@ -47,27 +47,6 @@ def motor_thread():
     print("\033[93mCONTROLLER: Motors Connected!\033[0m")
     time.sleep(0.5)
     
-    # SAFETY CHECK: Verify motor 51 position before proceeding
-    current_pos_51 = dmx_controller.read(51, PRESENT_POSITION)
-    if current_pos_51 is False:
-        print("\033[91m[SAFETY] Failed to read Motor 51 position! Disabling torque and exiting...\033[0m")
-        dynamixel_disconnect(dmx_controller)
-        with running_lock:
-            running = False
-        return
-    
-    print(f"\033[96m[SAFETY] Motor 51 current position: {current_pos_51}\033[0m")
-    
-    if not (0 <= current_pos_51 <= 500):
-        print(f"\033[91m[SAFETY] Motor 51 position {current_pos_51} is outside safe range [4000, 4080]!\033[0m")
-        print("\033[91m[SAFETY] Disabling torque and exiting...\033[0m")
-        dynamixel_disconnect(dmx_controller)
-        with running_lock:
-            running = False
-        return
-    
-    print("\033[92m[SAFETY] Motor 51 position check passed. Proceeding with homing...\033[0m")
-    
     with joint_pos_lock:
         dynamixel_drive(dmx_controller, dmx_GSW, joint_pos)
     time.sleep(0.5)
@@ -108,7 +87,7 @@ def motor_thread():
 def keyboard_thread():
     global running, joint_pos   
     
-    TICK_STEP = 10
+    TICK_STEP = 5
     
     print("\033[93mKEYBOARD: ENTER to start, W/S to move boom, Q to quit\033[0m")
     
@@ -139,19 +118,19 @@ def keyboard_thread():
                     with running_lock:
                         running = False
                         
-                if delta1 != 0:
+                if delta1 != 0: # pitch
                     with joint_pos_lock:
                         joint_pos[1] += delta1
                         joint_pos[4] += delta1
                         joint_pos[7] += delta1
                         joint_pos[10] += delta1
-                if delta2 != 0:
+                if delta2 != 0: # roll
                     with joint_pos_lock:
                         joint_pos[0] += delta2
                         joint_pos[3] += delta2
                         joint_pos[6] += delta2
                         joint_pos[9] += delta2
-                if delta3 != 0:
+                if delta3 != 0: # boom
                     with joint_pos_lock:
                         joint_pos[2] += delta3
                         joint_pos[5] += delta3
