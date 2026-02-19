@@ -23,7 +23,7 @@ joint_pos = [
     MOTOR41_HOME, MOTOR42_HOME, MOTOR43_HOME,
     MOTOR51_HOME, MOTOR52_HOME, MOTOR53_HOME,
 ]
-joint_pos_lock = threading.Lock()
+joint_pos_lock = threading.Lock() 
 
 # Motor loads for diagnostics (motors 22, 32, 42, 52)
 motor_loads = [0, 0, 0, 0]  # [ARM1_PITCH, ARM2_PITCH, ARM3_PITCH, ARM4_PITCH]
